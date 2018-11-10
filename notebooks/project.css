@@ -1,0 +1,6 @@
+<style>
+    table {
+        display: inline-block
+    }
+    .rendered_html td, .rendered_html th {text-align: left;}
+</style>
