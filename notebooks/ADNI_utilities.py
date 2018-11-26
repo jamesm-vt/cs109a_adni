@@ -2,6 +2,11 @@ import numpy as np
 import pandas as pd
 import os
 
+from sklearn.model_selection import KFold
+from sklearn.linear_model import LinearRegression
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.model_selection import GridSearchCV
+from sklearn.preprocessing import StandardScaler
 
 # print term definitions and codes, and 
 def define_terms(data_df, dict_df, table_name=None, columns=None):
@@ -114,3 +119,145 @@ def append_meta_cols(df_cols, col_list):
 
     # output updated column list
     return(col_list)
+
+
+def standardize_cols(data: pd.DataFrame, cols: list, scaler: StandardScaler=None) -> pd.DataFrame:
+    """Standardize the columns of data specified by cols.
+    
+    data - A DataFrame of data to scale.
+    cols - A list of column names to standardize.
+    scaler - A previously fit scaler used to transform the data.
+        If scaler=None, a new scaler will be created to fit and transform the data.
+    
+    Returns a copy of data with specified columns standardized.
+    """
+    
+    data = data.copy()
+    data_to_scale = data[cols]
+    
+    # Instantiate and fit a scaler if one wasn't provided
+    if scaler == None:
+        scaler = StandardScaler()
+        scaler.fit(data_to_scale)
+      
+    scaler.fit(data_to_scale)    
+    data[cols] = scaler.transform(data_to_scale)
+    
+    return scaler, data
+
+
+def impute_values_regression(data, random_error=False):
+    """Impute missing data using regression and optionally a random error term.
+    For each column with missing data, this function will remove rows with
+    null values for that columm. A linear and KNN model will be trained on the remaining
+    data. The best model will be used to predict the missing values. The predicted values
+    will be added back to the data and will be included in predicting successive
+    columns.
+    
+    # Arguments
+        data: Dataframe of data with missing values
+        random_error: Boolean - whether to add noise from random errors
+    
+    # Returns
+        A copy of data with missing values imputed and a list of scores (one per imputed column).
+    """
+    
+    # Use KFold object to ensure data is shuffled properly
+    kfold = KFold(10, shuffle=True)
+
+    data = data.copy()
+    scores = []
+    
+    # get the columns that have null values
+    cols = data.columns[data.isnull().any()].tolist()
+    
+    for col in cols:
+        # Remove rows with missing data in the current col
+        data_w_nulls = data[data[col].isnull()]
+        
+        # Train on the rest
+        data_wo_nulls = data.dropna(subset=[col])
+
+        # Pull out the current col as the reponse variable
+        X = data_wo_nulls.drop(labels=col, axis=1)
+        y = data_wo_nulls[col]
+
+        # Use simple mean imputation on other predictors
+        # so the model won't blow up on NaNs
+        X = X.fillna(X.mean())
+
+        # Fit the model
+        tmp_scores = []
+        lr_model = LinearRegression()
+        lin_gs = GridSearchCV(lr_model, param_grid={}, cv=kfold, scoring="r2", 
+                          return_train_score=True)
+        lin_gs = lin_gs.fit(X, y)
+        tmp_scores.append((lin_gs, lin_gs.score(X, y)))
+        
+        neighbors = range(2, 100, 2)  
+        knn_model = KNeighborsRegressor()
+        knn_gs = GridSearchCV(knn_model, param_grid={'n_neighbors': neighbors}, cv=kfold, scoring="r2", 
+                          return_train_score=True)
+        knn_gs = knn_gs.fit(X, y)
+        tmp_scores.append((knn_gs, knn_gs.score(X, y)))
+        
+        # Selet the best model based on the highest score
+        model, score = sorted(tmp_scores, key=lambda x: x[1], reverse=True)[0]
+
+        # Get residuals to add random error
+        yhat = model.predict(X)
+        resids = y - yhat
+        
+        # Now prepare and predict the missing values
+        data_w_nulls = data_w_nulls.drop(labels=col, axis=1)    # drop col we're predicting
+        data_w_nulls = data_w_nulls.fillna(data_w_nulls.mean()) # impute NaNs in other predictors
+        data_w_nulls = data_w_nulls.fillna(0)                   # in case we can't impute the mean
+        preds = model.predict(data_w_nulls)
+        
+        # Add random errors
+        if random_error:
+            errors = np.random.choice(resids, len(preds))
+            preds = np.add(preds, errors)
+        
+        # Update the dataset with predicted values
+        data.loc[data[col].isnull(), col] = preds
+        
+        # Record the score
+        scores.append(score)
+    
+    # Return imputed data and scores
+    return data, zip(cols, scores)
+
+
+
+# How much missing data do we have per column?
+def calculate_missing_data(data): 
+    """Calculates the number of and percentage of missing values per column.
+    
+    data - Dataframe from which to calculate missing data.
+    
+    Return: A dataframe with count and percentage of missing values per colummn.
+    """
+    cols_with_nulls = data.columns[data.isnull().any()]
+
+    idx = []
+    missing = []
+    missing_pct = []
+    total_missing = data.isnull().sum().sum()
+
+    for col in cols_with_nulls:
+        idx.append(col)
+        missing.append(len(data[col][data[col].isnull()]))
+        missing_pct.append(100 * len(data[col][data[col]
+                                                   .isnull()])/len(data[col]))
+
+    missing_df = pd.DataFrame(np.array([missing, missing_pct]).T, 
+                              index=idx, columns=['Num Missing', 'Pct. Missing'])
+    missing_df = missing_df.sort_values(by=['Pct. Missing'], ascending=False)
+    
+    print(f'There are a total of {total_missing} missing values.')
+    print(f'Out of {len(data.columns)} features in the dataset, {len(missing_df)} have missing values.')
+    print("\nQuartiles of missing data:")
+    print(missing_df.quantile([.25, .5, .75, 1]))
+    
+    return missing_df
