@@ -7,6 +7,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import StandardScaler
+ 
 
 # print term definitions and codes, and 
 def define_terms(data_df, dict_df, table_name=None, columns=None):
@@ -121,18 +122,25 @@ def append_meta_cols(df_cols, col_list):
     return(col_list)
 
 
-def standardize_cols(data: pd.DataFrame, cols: list, scaler: StandardScaler=None) -> pd.DataFrame:
+def standardize_cols(data: pd.DataFrame, cols: list=None, scaler: StandardScaler=None) -> pd.DataFrame:
     """Standardize the columns of data specified by cols.
     
-    data - A DataFrame of data to scale.
-    cols - A list of column names to standardize.
-    scaler - A previously fit scaler used to transform the data.
-        If scaler=None, a new scaler will be created to fit and transform the data.
+    # Arguments
+        data - A DataFrame of data to scale.
+        cols - A list of column names to standardize. If None, all dtype 'float64' columns
+            will be selected.
+        scaler - A previously fit scaler used to transform the data.
+            If scaler=None, a new scaler will be created to fit and transform the data.
     
-    Returns a copy of data with specified columns standardized.
+    # Returns
+        A copy of data with specified columns standardized.
     """
     
     data = data.copy()
+    
+    if cols is None:
+       cols = data.select_dtypes(include=['float64']).columns
+    
     data_to_scale = data[cols]
     
     # Instantiate and fit a scaler if one wasn't provided
@@ -143,19 +151,26 @@ def standardize_cols(data: pd.DataFrame, cols: list, scaler: StandardScaler=None
     scaler.fit(data_to_scale)    
     data[cols] = scaler.transform(data_to_scale)
     
-    return scaler, data
+    return data
 
 
-def impute_values_regression(data, random_error=False):
-    """Impute missing data using regression and optionally a random error term.
-    For each column with missing data, this function will remove rows with
-    null values for that columm. A linear and KNN model will be trained on the remaining
-    data. The best model will be used to predict the missing values. The predicted values
-    will be added back to the data and will be included in predicting successive
-    columns.
+def impute_values_regression(data, cols=None, estimator=None, param_grid={}, scoring="r2", random_error=True):
+    """Impute missing data using regression and optionally a random error term. If
+    cols=None, then all columns having dtype of 'float*' and missing data will be
+    considered. For each column with missing data, this function will remove rows
+    with null values for that columm.
+    
+    A linear and KNN model will be trained on the remaining data. The best model
+    will be used to predict the missing values. The predicted values will be added
+    back to the data and will be included in predicting successive columns.
     
     # Arguments
         data: Dataframe of data with missing values
+        cols: A list of columns with missing values to impute. If None, columns with
+            float dtypes and missing values will be selected.
+        classifier: the classifier to use
+        param_grid: GridSearchCv params
+        scoring: method to evaluate model
         random_error: Boolean - whether to add noise from random errors
     
     # Returns
@@ -169,50 +184,52 @@ def impute_values_regression(data, random_error=False):
     scores = []
     
     # get the columns that have null values
-    cols = data.columns[data.isnull().any()].tolist()
+    if cols is None:
+        cols = data.columns[data.isnull().any()].tolist()
     
     for col in cols:
+
+        # Only consider dtype = 'float*' for regression
+        if 'float' not in str(data[col].dtype):
+            continue
+        
+        train = data.copy()
+        
+        # Use simple mean imputation on other non-categorical predictors for modeling
+        float_data = train.select_dtypes(include=['float64'])
+        if (col in float_data.columns):
+            float_data = float_data.drop(labels=col, axis=1)
+        
+        float_data = float_data.fillna(float_data.mean())
+        train.update(float_data)
+        
         # Remove rows with missing data in the current col
-        data_w_nulls = data[data[col].isnull()]
+        data_w_nulls = train[train[col].isnull()]
+        
+        # If no missing values, continue to next variable
+        if len(data_w_nulls) == 0:
+            continue
+        
         
         # Train on the rest
-        data_wo_nulls = data.dropna(subset=[col])
+        data_wo_nulls = train.dropna(subset=[col])
 
         # Pull out the current col as the reponse variable
         X = data_wo_nulls.drop(labels=col, axis=1)
         y = data_wo_nulls[col]
 
-        # Use simple mean imputation on other predictors
-        # so the model won't blow up on NaNs
-        X = X.fillna(X.mean())
-
-        # Fit the model
-        tmp_scores = []
-        lr_model = LinearRegression()
-        lin_gs = GridSearchCV(lr_model, param_grid={}, cv=kfold, scoring="r2", 
+        gs = GridSearchCV(estimator, param_grid=param_grid, cv=kfold, scoring=scoring, 
                           return_train_score=True)
-        lin_gs = lin_gs.fit(X, y)
-        tmp_scores.append((lin_gs, lin_gs.score(X, y)))
-        
-        neighbors = range(2, 100, 2)  
-        knn_model = KNeighborsRegressor()
-        knn_gs = GridSearchCV(knn_model, param_grid={'n_neighbors': neighbors}, cv=kfold, scoring="r2", 
-                          return_train_score=True)
-        knn_gs = knn_gs.fit(X, y)
-        tmp_scores.append((knn_gs, knn_gs.score(X, y)))
-        
-        # Selet the best model based on the highest score
-        model, score = sorted(tmp_scores, key=lambda x: x[1], reverse=True)[0]
+        gs = gs.fit(X, y)
+        scores.append((gs.best_estimator_, gs.best_score_))
 
         # Get residuals to add random error
-        yhat = model.predict(X)
+        yhat = gs.predict(X)
         resids = y - yhat
         
         # Now prepare and predict the missing values
         data_w_nulls = data_w_nulls.drop(labels=col, axis=1)    # drop col we're predicting
-        data_w_nulls = data_w_nulls.fillna(data_w_nulls.mean()) # impute NaNs in other predictors
-        data_w_nulls = data_w_nulls.fillna(0)                   # in case we can't impute the mean
-        preds = model.predict(data_w_nulls)
+        preds = gs.predict(data_w_nulls)
         
         # Add random errors
         if random_error:
@@ -221,9 +238,94 @@ def impute_values_regression(data, random_error=False):
         
         # Update the dataset with predicted values
         data.loc[data[col].isnull(), col] = preds
+    
+    # Return imputed data and scores
+    return data, zip(cols, scores)
+
+
+
+def impute_values_classification(data, cols=None, estimator=None, param_grid={}, scoring="accuracy"):
+    """Impute missing data using the given classifier. For each column with
+    missing data, this function will remove rows with null values for that columm.
+    
+    The classifier will be trained on the remaining data and then will be used to
+    predict the missing values. The predicted values will be added back into the
+    data and will be included in predicting successive columns.
+    
+    # Arguments
+        data: Dataframe of data with missing values
+        cols: A list of columns to impute missing values
+        estimator: A classifier to use
+        param_grid: param grid to be passed to the classifier
+        scoring: scoring passed to gridsearchcv
+    
+    # Returns
+        A copy of data with missing values imputed and a list of scores (one per imputed column).
+    """
+    
+    kfold = KFold(10, shuffle=True)
+
+    data = data.copy()
+    scores = []
+    categories = list(cols)
+    
+    for col in cols:
         
-        # Record the score
-        scores.append(score)
+
+        # Remove the category we're modeling/predicting
+        categories.pop(categories.index(col))
+
+        train = data.copy()
+        
+        # Make categorical variables before we fit
+        train = pd.get_dummies(train, columns=categories, drop_first=True, dummy_na=True)
+        
+        # Use simple mean imputation on other non-categorical predictors for modeling
+        float_data = train.select_dtypes(include=['float64'])
+        if (col in float_data.columns):
+            float_data = float_data.drop(labels=col, axis=1)
+        
+        float_data = float_data.fillna(float_data.mean())
+        train.update(float_data)
+        
+        # Remove rows with missing data in the current col
+        data_w_nulls = train[train[col].isnull()]
+        
+        # If there are no NAs, then make dummies and continue
+        if len(data_w_nulls) == 0:
+            data = pd.get_dummies(data, columns=[col], drop_first=True, dummy_na=False)
+            continue
+        
+        # Train on the rest
+        data_wo_nulls = train.dropna(subset=[col])
+        
+        # Pull out the current col as the reponse variable
+        X = data_wo_nulls.drop(labels=col, axis=1)
+        y = data_wo_nulls[col]
+
+        gs = GridSearchCV(estimator, param_grid=param_grid, cv=kfold, scoring=scoring, 
+                          return_train_score=True)
+
+        gs = gs.fit(X.values, y.values)
+        scores.append((gs.best_estimator_, gs.best_score_))
+
+        
+        # Now prepare and predict the missing values
+        data_w_nulls = data_w_nulls.drop(labels=col, axis=1)    # drop col we're predicting
+        data_w_nulls = data_w_nulls.fillna(data_w_nulls.mean()) # impute NaNs in other predictors
+        data_w_nulls = data_w_nulls.fillna(0)                   # in case we can't impute the mean
+        preds = gs.predict(data_w_nulls.values)
+        
+        # Add random errors
+        #if random_error:
+        #    errors = np.random.choice(resids, len(preds))
+        #    preds = np.add(preds, errors)
+        
+        # Update the dataset with predicted values
+        data.loc[data[col].isnull(), col] = preds
+        
+        # Make the estimated variable categorical and add back into data
+        data = pd.get_dummies(data, columns=[col], drop_first=True, dummy_na=False)
     
     # Return imputed data and scores
     return data, zip(cols, scores)
