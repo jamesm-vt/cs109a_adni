@@ -1,3 +1,12 @@
+# CS109A
+#
+# Authors:
+#   Shristi Pandey
+#   James May,
+#   Zachary Werkhoven
+#   Guilherme Braz
+
+
 import numpy as np
 import pandas as pd
 import os
