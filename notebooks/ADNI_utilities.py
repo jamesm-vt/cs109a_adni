@@ -183,7 +183,7 @@ def impute_values_regression(data, cols=None, estimator=None, param_grid={}, ran
     kfold = KFold(folds, shuffle=True)
 
     data = data.copy()
-    scores = []
+    scores, imputed = [], []
 
     # get the columns that have null values
     if cols is None:
@@ -212,8 +212,15 @@ def impute_values_regression(data, cols=None, estimator=None, param_grid={}, ran
         if len(data_w_nulls) == 0:
             continue
 
+        print(f'Imputing feature {cols.index(col) + 1} of {len(cols)}: {col}')
+            
         # Train on the rest
         data_wo_nulls = train.dropna(subset=[col])
+        
+        if data_wo_nulls.shape[0] < folds:
+            col_mean = data[col].fillna(data[col].mean())
+            data.update(col_mean)
+            continue
 
         # Pull out the current col as the reponse variable
         X = data_wo_nulls.drop(labels=col, axis=1)
@@ -222,6 +229,8 @@ def impute_values_regression(data, cols=None, estimator=None, param_grid={}, ran
         gs = GridSearchCV(estimator, param_grid=param_grid, cv=kfold,
                           return_train_score=True, n_jobs=-1)
         gs = gs.fit(X.values, y.values)
+        
+        imputed.append(col)
         scores.append((gs.best_estimator_, gs.best_score_))
 
         # Get residuals to add random error
@@ -241,7 +250,7 @@ def impute_values_regression(data, cols=None, estimator=None, param_grid={}, ran
         data.loc[data[col].isnull(), col] = preds
 
     # Return imputed data and scores
-    return data, cols, scores
+    return data, imputed, scores
 
 
 def impute_values_classification(data, cols=None, estimator=None, param_grid={},
@@ -269,10 +278,11 @@ def impute_values_classification(data, cols=None, estimator=None, param_grid={},
         and columns that could not be imputed due to errors (if any).
     """
     folds = 5
-    kfold = StratifiedKFold(folds, shuffle=True)
+    strat_kfold = StratifiedKFold(folds, shuffle=True)
+    kfold = KFold(folds, shuffle=True)
 
     data = data.copy()
-    scores, errors, classified = [], [], []
+    scores, errors, imputed = [], [], []
     categories = list(cols)
 
     for col in cols:
@@ -315,26 +325,26 @@ def impute_values_classification(data, cols=None, estimator=None, param_grid={},
         # Pull out the current col as the reponse variable
         X = data_wo_nulls.drop(labels=col, axis=1)
         y = data_wo_nulls[col]
-        
-        # Make sure we have enough class members to do cv
-        if (min(y.value_counts()) < folds) or (len(y.value_counts()) < 2):
-            print(f'Not enough class members to impute {col}')
-            print(y.value_counts())
-            data = data.drop(labels=col, axis=1)
-            errors.append(col)
-            continue
 
-        gs = GridSearchCV(estimator, param_grid=param_grid, cv=kfold, scoring=scoring,
+        gs = GridSearchCV(estimator, param_grid=param_grid, cv=strat_kfold, scoring=scoring,
                           return_train_score=True, n_jobs=-1)
         try:
             gs = gs.fit(X.values, y.values)
         except:
-            print(f'Error fitting values for {col}')
-            print(y.value_counts())
-            data = data.drop(labels=col, axis=1)
-            errors.append(col)
-            continue
-            
+            try:
+                # If not enough of each class to stratify, try simple KFold
+                gs = GridSearchCV(estimator, param_grid=param_grid,
+                              cv=kfold, scoring=scoring,
+                              return_train_score=True, n_jobs=-1)
+                gs = gs.fit(X.values, y.values)
+            except:
+                print(f'Error fitting values for {col}')
+                print(y.value_counts())
+                data = data.drop(labels=col, axis=1)
+                errors.append(col)
+                continue
+        
+        imputed.append(col)
         scores.append((gs.best_estimator_, gs.best_score_))
 
         # Now prepare and predict the missing values
@@ -348,10 +358,9 @@ def impute_values_classification(data, cols=None, estimator=None, param_grid={},
 
         # Make the estimated variable categorical and add back into data
         data = pd.get_dummies(data, columns=[col], drop_first=True, dummy_na=False)
-        classified.append(col)
 
     # Return imputed data and scores
-    return data, classified, scores, errors
+    return data, imputed, scores, errors
 
 
 def drop_missing_cols(data:pd.DataFrame, cols=None, threshold=0.0):
