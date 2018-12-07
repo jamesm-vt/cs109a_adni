@@ -1,15 +1,17 @@
 ---
-title: The Case of the Italian Olives
+title: Predicting Alzheimer's diagnoses from early indicators
 ---
 
-This is the home page
+What is this project?
 
-## Lets have fun
+## Project Goal
 
->here is a quote
+Summary statement of source of the data and the overarching goal of the project.
 
-Here is *emph* and **bold**.
+## Principal Challenges and Features
 
-Here is some inline math $\alpha = \frac{\beta}{\gamma}$ and, of-course, E rules:
-
-$$ G_{\mu\nu} + \Lambda g_{\mu\nu}  = 8 \pi T_{\mu\nu} . $$
+- data cleaning
+- data aggregation
+- dealing with missingness
+- feature selection
+- modeling

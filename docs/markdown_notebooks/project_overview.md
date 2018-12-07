@@ -9,8 +9,6 @@ nav_include: 1
 *  
 {: toc}
 
-# Project Overview
-
 This is the project overview.
 
 ## This is a sub-section

@@ -1,14 +1,13 @@
 ---
-title: report test and train accuracy
+title: Modeling
 notebook: ..\markdown_notebooks\imputed_data_modeling_EDA.ipynb
+nav_include: 4
 ---
 
 ## Contents
 {:.no_toc}
 *  
 {: toc}
-
-(Zach Werkhoven)
 
 
 

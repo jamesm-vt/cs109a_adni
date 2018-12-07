@@ -1,5 +1,5 @@
 ---
-title: store response var
+title: Raw Data
 notebook: ..\markdown_notebooks\rawdata_grouping_EDA.ipynb
 ---
 
@@ -7,10 +7,6 @@ notebook: ..\markdown_notebooks\rawdata_grouping_EDA.ipynb
 {:.no_toc}
 *  
 {: toc}
-
-(Zach Werkhoven)
-
-
 
 
 <br>
