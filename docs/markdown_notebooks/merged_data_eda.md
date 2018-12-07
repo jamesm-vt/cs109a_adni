@@ -1,5 +1,5 @@
 ---
-title: Save the scores
+title: ADNI Merge
 notebook: ..\markdown_notebooks\merged_data_eda.ipynb
 nav_include: 2
 ---
