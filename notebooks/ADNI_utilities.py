@@ -254,7 +254,7 @@ def impute_values_regression(data, cols=None, estimator=None, param_grid={}, ran
 
 
 def impute_values_classification(data, cols=None, estimator=None, param_grid={},
-                                 scoring="accuracy", impute_thresh=0.0):
+                                 scoring="accuracy", impute_thresh=0.25):
     """Impute missing data using the given classifier. For each column with
     missing data, this function will remove rows with null values for that columm.
     
@@ -362,6 +362,81 @@ def impute_values_classification(data, cols=None, estimator=None, param_grid={},
     # Return imputed data and scores
     return data, imputed, scores, errors
 
+
+
+def impute_errors(data, cols=None):
+    """Imputes classification features. This function does not use
+    KFold validation and is only intended for those features that
+    cannot be imputed with KFold due to the distribution of the
+    classes, i.e. some class counts are less than 'k' and therefore
+    an error occus during the fitting.
+    """
+    data = data.copy()
+    scores, errors, imputed = [], [], []
+    categories = list(cols)
+    impute_thresh = .25
+
+    for col in cols:
+
+        # Remove the category we're modeling/predicting
+        categories.pop(categories.index(col))
+
+        train = data.copy()
+
+        # Drop categorical cols from predictors if threshold is exceeded
+        train = drop_missing_cols(train, categories, impute_thresh)
+
+        # Identify categorical cols still in the dataset
+        subset = list(set(categories) & set(train.columns))
+
+        # Make categorical variables before we fit
+        train = pd.get_dummies(train, columns=subset, drop_first=True, dummy_na=True)
+
+        # Remove rows with missing data in the current col
+        data_w_nulls = train[train[col].isnull()]
+
+        # If there are no NAs, then make dummies and continue
+        if len(data_w_nulls) == 0:
+            data = pd.get_dummies(data, columns=[col], drop_first=True, dummy_na=False)
+            continue
+        
+        print(f'Imputing feature {cols.index(col) + 1} of {len(cols)}: {col}')
+        
+        # Train on the rest
+        data_wo_nulls = train.dropna(subset=[col])
+
+        # Pull out the current col as the reponse variable
+        X = data_wo_nulls.drop(labels=col, axis=1)
+        y = data_wo_nulls[col]
+
+        dtc = DecisionTreeClassifier(max_features="auto", class_weight="balanced", min_samples_leaf=3, max_depth=None)
+        ada = AdaBoostClassifier(base_estimator=dtc, n_estimators=100)
+         
+        try:
+            ada = ada.fit(X.values, y.values)
+        except:
+            print(f'Error fitting values for {col}')
+            print(y.value_counts())
+            data = data.drop(labels=col, axis=1)
+            continue
+        
+        imputed.append(col)
+        scores.append(ada.score(X, y))
+
+        # Now prepare and predict the missing values
+        data_w_nulls = data_w_nulls.drop(labels=col, axis=1)  # drop col we're predicting
+        data_w_nulls = data_w_nulls.fillna(data_w_nulls.mean())  # impute NaNs in other predictors
+        data_w_nulls = data_w_nulls.fillna(0)  # in case we can't impute the mean
+        preds = ada.predict(data_w_nulls.values)
+
+        # Update the dataset with predicted values
+        data.loc[data[col].isnull(), col] = preds
+
+        # Make the estimated variable categorical and add back into data
+        data = pd.get_dummies(data, columns=[col], drop_first=True, dummy_na=False)
+
+    # Return imputed data and scores
+    return data, imputed, scores, errors
 
 def drop_missing_cols(data:pd.DataFrame, cols=None, threshold=0.0):
     """Removes columns with missing data beyond the given threshold.
