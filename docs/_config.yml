@@ -1,0 +1,9 @@
+theme: jekyll-theme-primer
+title: Support Vector Olives
+description: CS109a - Group 10 Final Project
+baseurl:
+markdown: kramdown
+kramdown:
+    math_engine: mathjax
+    input: GFM
+    syntax_highlighter: rouge
