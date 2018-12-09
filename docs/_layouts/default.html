@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
 {% seo %}
-    <link href="/assets/css/style.css" rel="stylesheet">
+    <link href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}" rel="stylesheet">
     <title>{{page.title}}</title>
     <!-- mathjax config similar to math.stackexchange -->
     <script type="text/x-mathjax-config">
