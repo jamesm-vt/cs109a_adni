@@ -1,8 +1,8 @@
 ---
-title: Subject Characteristics Exploratory Data Analysis
+title: Subject Characterestics
 notebook: ..\markdown_notebooks\sub_characteristics_EDA.ipynb
 section: 2
-subsection: 8
+subsection: 7
 ---
 
 ## Contents

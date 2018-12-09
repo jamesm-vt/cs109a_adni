@@ -1,8 +1,8 @@
 ---
-title: Raw Data - Per Patient Grouping
+title: Data Aggregation
 notebook: ..\markdown_notebooks\rawdata_grouping_EDA.ipynb
 section: 2
-subsection: 7
+subsection: 8
 ---
 
 ## Contents

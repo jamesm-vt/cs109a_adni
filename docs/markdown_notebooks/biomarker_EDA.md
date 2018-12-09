@@ -1,5 +1,5 @@
 ---
-title: Biomarker Exploratory Data Analysis
+title: Biomarkers
 notebook: ..\markdown_notebooks\biomarker_EDA.ipynb
 section: 2
 subsection: 2

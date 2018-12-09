@@ -1,5 +1,5 @@
 ---
-title: Diagnostic Response Variable EDA
+title: Diagnosis
 notebook: ..\markdown_notebooks\diagnosis_EDA.ipynb
 section: 2
 subsection: 3
