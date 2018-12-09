@@ -5,29 +5,65 @@ section: 1
 subsection: 2
 ---
 
-## Project Summary
+## Contents
+{:.no_toc}
+*  
+{: toc}
 
-The Alzheimer’s Disease Neuroimaging Initiative (ADNI) is a global study that aims to understand factors leading to the Alzheimer’s Disease (AD) and to track disease progression. The study began in 2004 and is currently funded to continue through 2021. Many universities in the US and Canada have contributed to ADNI with data collected from nearly 3,000 patients across 63 clincal sites. ADNI has progressed through 4 phases (ADNI1, ADNI-GO, ADNI-2, and ADNI-3) with distinct research goals. Although the central focus of ADNI is to provide neuroanatomical imaging on patients over time, the study also includes comprehensive information from genetic screens, clinical exam results,patient history, and clinical diagnosis for Alzheimer's Disease. In total, the ADNI data is distributed over **(insert number)** raw data tables.
+## What is the ADNI data?
 
-ADNI's data files have a longitudinal format with each observation corresponding to a clinical visit for a single patient. Following each visit, patients are assigned one of the three diagnostic categories: Cognitively Normal(CN), Mild Cognitive Impairment(MCI), and Alzheimer’s Disease(AD). 
-
-
-ADNI contains longitudinal data collected over multiple phases across many patient visits. 
-
-ADNI provides a dataset (adnimerge) that summarizes the most commonly used measures captured throughout the study. This dataset compiles 113 features from more than 13,000 visits and 2,080 patients. The data comes from roughly an equal distribution of male and female patients aged between 54 and 91 years old with a mean age of 73 years old. The education level of the patients follows a roughly equal distribution across the three diagnostic categories in the data. It is noteworthy that the distribution of race and ethnicities in the data, however, is largely skewed towards white and non-hispanic populations (Figure 2). 
-
+The Alzheimer’s Disease Neuroimaging Initiative (ADNI) is a global study that aims to understand factors leading to the Alzheimer’s Disease (AD) and to track disease progression. The study began in 2004 and is currently funded to continue through 2021. Many universities in the US and Canada have contributed to ADNI with data collected from nearly 3,000 patients across 63 clincal sites. ADNI has progressed through 4 phases (ADNI1, ADNI-GO, ADNI-2, and ADNI-3) with distinct research goals (Figure 1). Although the central focus of ADNI is to provide neuroanatomical imaging on patients over time, the study also includes comprehensive information from genetic screens, clinical exam results,patient history, and clinical diagnosis for Alzheimer's Disease. In total, the ADNI data is distributed over **(insert number)** raw data tables.
 
 {:.center}
-![png](index_files/ADNI_logo_vector.png)
+<figure class="image">
+    <img src="/data_summary_files/adni_phase_summary.png" alt="">
+    <<figcaption style="text-align: left">
+        Figure 1. Summary of the measures collected during each ADNI phase (from ADNI website).
+    </figcaption>
+</figure>
 
-## Principal Challenges and Features
+ADNI's data files have a longitudinal format with each observation corresponding to a clinical visit for a single patient. The diversity of measures recorded from patients during the study requires that that they are collected at different clinicians in separate locations on different dates. The end result is that the separate visits often record very different information. Patients periodically have diagnostic visits where they are assigned one of the three diagnostic categories: Cognitively Normal(CN), Mild Cognitive Impairment(MCI), and Alzheimer’s Disease(AD) (Figure 1). ADNI recruits patients on a rolling basis with patients joining and dropping out of the study at each ADNI phase. The initial patient set at the start of the study in ADNI-1 represents the single largest cohort of patients, with a comparable number of patients joining in ADNI-2. A small fraction (~20%) of patients change diagnoses over the course of the study.
 
-The scope of the ADNI study spans 14 years, 63 clincal sites and a diversity of measures including neuroimaging, cognitive tests, genetic screenings, chemical profiling, and patient history. The nature of the data and data collection presents unique challenges in modeling the disease. These challenges and our approaches to solving them are outlined here but are detailed in their respective sections. Briefly, we aimed to address the following in this project:
+{:.center}
+<figure class="image">
+    <img src="/data_summary_files/Patient_Demographics.svg" alt="" class="svg">
+    <<figcaption style="text-align: left">
+        Figure 2. ADNI contains longitudinal data collected over multiple phases across many patient visits.
+    </figcaption>
+</figure>
 
-- **Data Cleaning** - The ADNI data is distributed throughout hundreds of raw data files with inconsistent formats. In the section, we: research the raw data, separate the relevant data from meta data, standardize data types for continuous and categorical data, convert all missing values to a standard indicator
+## Patient Demographics
 
-- **Data Aggregation** - The ADNI data is organized in a longitudinal format with a single observation corresponding to a single visit for a particular patient. In this section, we: identify and compare methods for converting the data from a longitudinal format to a format with a single entry per patient.
+In additional to the raw data, ADNI provides a data set (adnimerge) that summarizes the most commonly used measures captured throughout the study. This data set compiles 113 features from more than 13,000 visits and 2,080 patients. The data comes from roughly an equal distribution of male and female patients aged between 54 and 91 years old with a mean age of 73 years old. The education level of the patients follows a roughly equal distribution across the three diagnostic categories in the data. It is noteworthy that the distribution of race and ethnicities in the data, however, is largely skewed toward non-hispanic, white patients (Figure 3). 
 
-- **Imputation** - Many of values are missing in the per patient data set above. In this section we compare methods for filtering and imputing the data to generate complete design matrices ready for modeling.
+{:.center}
+<figure class="image">
+    <img src="/data_summary_files/PatientDemographics.svg" alt="" class="svg">
+    <<figcaption style="text-align: left">
+        Figure 3. Distributions of ADNI patient demographics.
+    </figcaption>
+</figure>
 
-- **Modeling** - With the data cleaned, aggregated by patient, and imputed to replace missing values, we train and compare the performance of Random Forest and ADA Boost models in predicting Alzheimer's Disease diagnoses.
+## Data Missingness
+
+Due to the length of the study, the diversity of measures recorded, and the cost of the procedures involved, it is hardly surprising that much of the is data missing. Roughly half of the measures are missing 50% or more of the observations (Figure 4). Unfortunately, missingness is so prevalent in the data set that dropping observations or features with missingness will leave us with nothing to model. Filling in missing values with some method of imputation is a critical.
+
+{:.center}
+<figure class="image">
+    <img src="/data_summary_files/miss_by_feature.svg" alt="" style="width: 400px">
+    <<figcaption style="text-align: left">
+        Figure 4. Histogram of percent missingness among the features present in the dataset.
+    </figcaption>
+</figure>
+
+Of additional concern is the fact that the missingness of ADNI data is not distributed randomly. A look at the raw data in adnimerge shows large chunks of missing data along both rows and columns (Figure. 5). The structure of the missing data poses an additional challenges in replacing the missing data because it raises the possiblity bias in the remaining data. There are limits to how we can correct for any bias introduced by non-random missingness. So we will have to keep the possibility of bias in mind when interpreting our results. 
+
+{:.center}
+<figure class="image">
+    <img src="/data_summary_files/adni_merge_missingness.png" alt="" style="width: 400px">
+    <figcaption style="text-align: left">
+        Figure 5. Missing data overview of the adnimerge dataset. White indicates missing values. Sparkline on the right represents data completeness by row and the least(52) and highest(108) number of features missing in each entry of the database.
+    </figcaption>
+</figure>
+
+

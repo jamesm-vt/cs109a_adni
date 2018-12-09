@@ -31,7 +31,8 @@ meta_data = meta_df.loc[meta_df.filename==fname]
 # configure YAML preamble
 try:
     preamble = "title: {}\nnotebook: {}\nsection: {}\nsubsection: {}\n"\
-        .format(title, fileprefix+".ipynb", meta_data.section.values[0], meta_data.subsection.values[0])
+        .format(meta_data.title.values[0], fileprefix+".ipynb", \
+        meta_data.section.values[0], meta_data.subsection.values[0])
     preamble = "---\n"+preamble+"---\n"
 except:
     preamble = "title: \nnotebook: \nsection: \nsubsection: \n"
