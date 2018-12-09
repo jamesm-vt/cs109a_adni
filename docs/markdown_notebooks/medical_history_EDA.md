@@ -1,6 +1,8 @@
 ---
-title: iterate over dataframes
+title: Medical History Exploratory Data Analysis
 notebook: ..\markdown_notebooks\medical_history_EDA.ipynb
+section: 2
+subsection: 4
 ---
 
 ## Contents
@@ -28,6 +30,7 @@ sns.set()
 import statsmodels.api as sm
 from statsmodels.regression.linear_model import OLS
 
+# import custom dependencies
 from ADNI_utilities import define_terms, describe_meta_data, paths_with_ext, append_meta_cols
 ```
 
@@ -35,6 +38,7 @@ from ADNI_utilities import define_terms, describe_meta_data, paths_with_ext, app
 
 
 ```python
+# define figure defaults
 mpl.rc('axes', labelsize=10, titlesize=14)
 mpl.rc('figure', figsize=[6,4], titlesize=14)
 mpl.rc('legend', fontsize=12)
@@ -56,6 +60,7 @@ There are a lot of medical history data files. Before looking in depth at specif
 
 
 ```python
+# import adni dictionary
 adni_dict_df = pd.read_csv("../data/study info/DATADIC.csv")
 ```
 
@@ -230,11 +235,13 @@ We can further profile the data by looking at the distribution of duplicate entr
 
 
 ```python
+# get all csv files under directory
 csv_paths = paths_with_ext(directory="../data/Medical_History/")
 nrows = np.ceil(np.sqrt(len(csv_paths)))
 ncols = np.ceil(len(csv_paths)/nrows)
 
 plt.figure(figsize=(20,12))
+# iterate over files
 for i,path in enumerate(csv_paths):
     
     # initialize new plot
@@ -275,10 +282,13 @@ Let's start with the neurological exam results. These records span all phases of
 
 
 ```python
+# intialize neuroexam results and describe entries
 nex_df = pd.read_csv("../data/Medical_History/NEUROEXM.csv")
 
+# print table summary
 describe_meta_data(nex_df)
 
+# create dictionary_df for NEUROEXM table
 nex_dict = define_terms(nex_df, adni_dict_df, table_name="NEUROEXM");
 nex_dict
 ```
@@ -637,6 +647,7 @@ Many of the columns ending in `DES` are for doctor comments on the exams. The in
 
 
 ```python
+# drop description categories
 desc_columns = [col for col in nex_df.columns if "DES" in col]
 nex_df = nex_df.drop(columns=desc_columns, axis=1)
 ```
@@ -647,6 +658,7 @@ Next we should inspect the data types and make sure the format of each column ma
 
 
 ```python
+# print data types for each col
 nex_df.dtypes
 ```
 
@@ -689,10 +701,13 @@ From the list above, it looks like the measures we are interested in are the col
 
 
 ```python
+# replace missing values with -1
 nex_df.replace({np.nan:-1, -4:-1}, inplace=True)
 
+# define col list with exam results
 nex_cols = nex_df.columns[(nex_df.dtypes == 'float64').values]
 
+# convert columns in list to int
 nex_df[nex_cols] = nex_df[nex_cols].values.astype(int)
 ```
 
@@ -704,9 +719,11 @@ Next we'll investigate patient medical history as above.
 
 
 ```python
+# read in the data and print df summary
 med_df = pd.read_csv("../data/Medical_History/MEDHIST.csv")
 describe_meta_data(med_df)
 
+# create dictionary_df for MEDHIST table
 med_dict = define_terms(med_df, adni_dict_df, table_name="MEDHIST");
 med_dict
 ```
@@ -1073,6 +1090,7 @@ From the term definitions above we can see that there are many interesting detai
 
 
 ```python
+# record the columns of interest
 med_cols = med_df.columns[10:36]
 ```
 
@@ -1082,6 +1100,7 @@ To handle missingness, we'll enforce all missing values to be `-1`.
 
 
 ```python
+# set nan and -4 to -1
 med_df.replace({np.nan:-1, -4:-1}, inplace=True)
 ```
 
@@ -1095,9 +1114,11 @@ The names of `BLSCHECK` and `INITHEALTH` and the phases covered by each file sug
 
 
 ```python
+# read in the data and print df summary
 init_df = pd.read_csv("../data/Medical_History/INITHEALTH.csv")
 describe_meta_data(init_df)
 
+# create dictionary_df for MEDHIST table
 init_dict = define_terms(init_df, adni_dict_df, table_name="INITHEALTH");
 init_dict
 ```
@@ -1312,9 +1333,11 @@ init_dict
 
 
 ```python
+# read in the data and print df summary
 bls_df = pd.read_csv("../data/Medical_History/BLSCHECK.csv")
 describe_meta_data(bls_df)
 
+# create dictionary_df for MEDHIST table
 bls_dict = define_terms(bls_df, adni_dict_df, table_name="BLSCHECK");
 bls_dict
 ```
@@ -1681,10 +1704,13 @@ The column names make it pretty clear that these do not contain the same informa
 
 
 ```python
+# record bls columns
 bls_cols = bls_df.columns[9:36]
 
+# set missing value
 bls_df.replace({np.nan:-1, -4:-1}, inplace=True)
 
+# check data type
 bls_df[bls_cols].dtypes.unique()
 ```
 
@@ -1699,6 +1725,7 @@ bls_df[bls_cols].dtypes.unique()
 
 
 ```python
+# convert data type from float to int
 bls_df[bls_cols] = bls_df[bls_cols].values.astype(int)
 ```
 
@@ -1710,6 +1737,7 @@ These data points contain a lot of measurements across time. A quick and dirty a
 
 
 ```python
+# import data and get dictionary
 vitals_df = pd.read_csv("../data/Medical_History/VITALS.csv")
 vitals_dict = define_terms(vitals_df, adni_dict_df, table_name = "VITALS")
 vitals_dict
@@ -1934,6 +1962,7 @@ We can define a function to convert units.
 
 
 ```python
+# scales units in the specified columns by the values specified in a conversion dictionary {unit_type: conversion_factor}
 def normalize_units(df, data_cols, unit_cols, conv_dicts):
     # df - dataframe containing data with unit listings
     # data_cols - df columns containing data to be converted
@@ -1959,8 +1988,10 @@ def normalize_units(df, data_cols, unit_cols, conv_dicts):
 
 
 ```python
+# define conversion dictionaries for [weight, height, temp] units
 conv = [{1: 0.453592, 2: 1}, {1: 2.54, 2: 1}, {1: (5/9), 2: 1}]
 
+# convert lbs to kg, inches to cm
 vitals_df = normalize_units(vitals_df, ["VSWEIGHT","VSHEIGHT","VSTEMP"], ["VSWTUNIT","VSHTUNIT","VSTMPUNT"], conv)
 vitals_df["VSTEMP"] = vitals_df["VSTEMP"] - (32*(5/9))
 ```
@@ -1971,8 +2002,10 @@ With the units standardized, we can record the columns to keep and ensure that a
 
 
 ```python
+# columns to keep
 vitals_cols = ["VSWEIGHT","VSHEIGHT","VSBPSYS","VSBPDIA","VSPULSE","VSRESP","VSTEMP"]
 
+# ensure standard missing units
 vitals_df.replace({np.nan:-1, -4:-1}, inplace=True)
 
 vitals_df[vitals_cols].dtypes.unique()
@@ -1993,10 +2026,12 @@ With the columns from each data set hand-picked, the appropriate data types sele
 
 
 ```python
+# intialize dataframe list and empty placeholder
 all_dfs = [nex_df, med_df, bls_df, vitals_df]
 all_df_cols = [nex_cols, med_cols, bls_cols, vitals_cols]
 df_names = ["neuroexams","medhist","blsymptoms","vitals"]
 
+# iterate over dataframes
 for i,df in enumerate(all_dfs):
     
     # ensure RID is in column list for indexing

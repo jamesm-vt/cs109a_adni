@@ -1,6 +1,8 @@
 ---
-title: write data to file
+title: Diagnostic Response Variable EDA
 notebook: ..\markdown_notebooks\diagnosis_EDA.ipynb
+section: 2
+subsection: 3
 ---
 
 ## Contents
@@ -27,6 +29,7 @@ import statsmodels.api as sm
 from statsmodels.regression.linear_model import OLS
 %matplotlib inline
 
+# import custom dependencies
 from ADNI_utilities import define_terms, describe_meta_data, append_meta_cols
 ```
 
@@ -44,8 +47,10 @@ However, some ADNI phases record additional diagnoses (eg. `LMCI` and `EMCI` for
 
 
 ```python
+# read in data
 dx_df = pd.read_csv("../data/Diagnosis/DXSUM_PDXCONV_ADNIALL.csv")
 
+# read in the ADNI dictionary and get summary of terms
 adni_dict_df = pd.read_csv("../data/study info/DATADIC.csv")
 dx_terms = define_terms(dx_df, adni_dict_df)
 ```
@@ -54,6 +59,7 @@ dx_terms = define_terms(dx_df, adni_dict_df)
 
 
 ```python
+# print diagnosis dataframe overview
 describe_meta_data(dx_df)
 ```
 
@@ -70,6 +76,7 @@ describe_meta_data(dx_df)
 
 
 ```python
+# print the summary of terms
 dx_terms
 ```
 
@@ -484,6 +491,7 @@ We can see from the summary above that there are many diagnostic summaries which
 
 
 ```python
+# specify non alzheimer's diagnosis columns that may be of interest
 dx_cols = ["DXNORM","DXNODEP","DXMPTR1","DXMPTR2","DXMPTR3","DXMPTR4","DXMPTR5","DXPARK","DXDEP","DXOTHDEM"]
 ```
 
@@ -493,6 +501,7 @@ There seem to be three primary metrics that record alzheimer's diagnosis in the 
 
 
 ```python
+# print the values for diagnosis metrics
 print("DXCURREN values:\n")
 print(dx_terms.loc[dx_terms.FLDNAME=="DXCURREN"].CODE.values)
 print("\nDXCHANGE values:\n")
@@ -522,6 +531,7 @@ Let's see which metrics were recorded during each ADNI phase.
 
 
 ```python
+# look at number of diagnostic values for each phase
 by_phase = dx_df.groupby("Phase")
 n_per_phase = by_phase[["DXCURREN","DXCHANGE","DIAGNOSIS"]].apply(lambda x: x.shape[0]-x.isna().sum())
 n_per_phase
@@ -608,6 +618,7 @@ The `DXCHANGE` metric diagnosis take the format `from _ to _`. We'll use a rule 
 
 
 ```python
+# convert DXCHANGE to DX, NL=(1,7,9), MCI=(2,4,8), AD=(3,5,6)
 def combine_dx_measures(dxchange, dxcurr, diagnosis):
     
     # ensure arrays have proper dimensions
@@ -650,9 +661,11 @@ def combine_dx_measures(dxchange, dxcurr, diagnosis):
 
 
 ```python
+# combine diagnostic values across ADNI phases and add to df
 dx_comb = combine_dx_measures(dx_df.DXCHANGE.values, dx_df.DXCURREN.values, dx_df.DIAGNOSIS.values)
 dx_df["DXCOMB"] = dx_comb
 
+# append our new category to dx column list
 dx_cols.append("DXCOMB")
 ```
 
@@ -662,6 +675,7 @@ Check the unique values in the new combined diagnostic metric `DXCOMB`
 
 
 ```python
+# print unique vals
 dx_df.DXCOMB.unique()
 ```
 
@@ -678,6 +692,7 @@ Looking at the same table of number of entries per phase, we can see that all th
 
 
 ```python
+# look at number of diagnostic values for each phase
 by_phase = dx_df.groupby("Phase")
 n_per_phase = by_phase[["DXCURREN","DXCHANGE","DIAGNOSIS","DXCOMB"]].apply(lambda x: x.shape[0]-x.isna().sum())
 n_per_phase
@@ -756,6 +771,7 @@ n_per_phase
 
 
 ```python
+# ensure data types are all int for categorical data
 dx_df[dx_cols].dtypes.unique()
 ```
 
@@ -770,8 +786,10 @@ dx_df[dx_cols].dtypes.unique()
 
 
 ```python
+# ensure standardized missing value is compatible with int
 dx_df.replace({np.nan:-1, -4:-1}, inplace=True)
 
+# convert to int dtype
 dx_df[dx_cols] = dx_df[dx_cols].astype(int)
 ```
 
@@ -785,8 +803,10 @@ With the columns selected and the response variable constructed, we can output t
 
 
 ```python
+# ensure RID, VISCODE is in column list
 dx_cols = append_meta_cols(dx_df.columns, dx_cols)
     
+# write data to file
 to_file_df = dx_df[dx_cols]
 to_file_df.to_csv("../data/Cleaned/diagnosis_clean.csv")
 ```

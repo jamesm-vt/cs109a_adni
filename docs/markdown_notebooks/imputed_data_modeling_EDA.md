@@ -1,13 +1,16 @@
 ---
-title: Modeling
+title: Preliminary Modeling - Imputed Data
 notebook: ..\markdown_notebooks\imputed_data_modeling_EDA.ipynb
-nav_include: 4
+section: 4
+subsection: 2
 ---
 
 ## Contents
 {:.no_toc}
 *  
 {: toc}
+
+(Zach Werkhoven)
 
 
 
@@ -43,6 +46,7 @@ from sklearn.tree import DecisionTreeClassifier
 import statsmodels.api as sm
 from statsmodels.regression.linear_model import OLS
 
+# import custom dependencies
 from ADNI_utilities import define_terms, describe_meta_data, paths_with_ext, append_meta_cols
 ```
 
@@ -52,6 +56,7 @@ from ADNI_utilities import define_terms, describe_meta_data, paths_with_ext, app
 
 
 ```python
+# read in imputed data from file
 imp_df = pd.read_csv("../data/Per_Patient/pat_merge_imputed_lasso_ada.csv")
 imp_df.head()
 ```
@@ -236,11 +241,13 @@ Since we have multiple potential response variables in our data, we should separ
 
 
 ```python
+# define response columns
 resp_set = ["DX_BASE","DX_FINAL","DX_CHANGE","DXCOMB","DX_bl"]
 col_set = imp_df.columns.tolist()
 is_resp = [any([resp in col for resp in resp_set]) for col in col_set]
 resp_cols = imp_df.columns[is_resp]
 
+# print response columns
 print("Response columns:\n{}".format(resp_cols))
 ```
 
@@ -258,6 +265,7 @@ As we can see from the list above, the response variables have been one-hot-enco
 
 
 ```python
+# iterate of response prefixes
 resp_data = []
 for resp in resp_set:
     
@@ -275,6 +283,7 @@ for resp in resp_set:
 
 
 ```python
+# drop one-hot response vars and add new features
 imp_df = imp_df.drop(columns=resp_cols, axis=1)
 for col, data in zip(resp_set, resp_data):
     imp_df[col] = pd.Series(np.array(data), index=imp_df.index)
@@ -286,8 +295,10 @@ Now we can divide the data into train and test splits
 
 
 ```python
+# divide the data into train and test sets
 train_df, test_df = train_test_split(imp_df, test_size=0.2, shuffle=True)
 
+# define new dataframe with response vars
 y_train = train_df[resp_set]
 x_train = train_df.drop(columns=resp_set, axis=1)
 y_test = test_df[resp_set]
@@ -308,6 +319,7 @@ If we want to develop a model to predict ultimate diagnosis based on baseline me
 
 
 ```python
+# define and fit logistic regression model
 resp_var = 'DX_FINAL'
 logit = LogisticRegressionCV(Cs=10,cv=3, solver='newton-cg', multi_class='multinomial', max_iter=100)
 logit = logit.fit(x_train.values, y_train[resp_var].values)
@@ -329,6 +341,7 @@ logit = logit.fit(x_train.values, y_train[resp_var].values)
 
 
 ```python
+# plot cv accuracy as a function of alpha
 plt.plot(np.log(1/logit.Cs_), logit.scores_[0].mean(0), lw=2)
 plt.ylim(0,1)
 plt.xlabel("log(alpha)")
@@ -342,6 +355,7 @@ From the plot above we can see the optimal value for our regularization paramete
 
 
 ```python
+# report test and train accuracy
 print("Train accuracy = {0:.3f}".format(logit.score(x_train.values, y_train[resp_var].values)))
 print("Test accuracy = {0:.3f}".format(logit.score(x_test.values, y_test[resp_var].values)))
 ```
@@ -352,6 +366,7 @@ The performancy of the model is significantly worse on the test data, suggesting
 
 
 ```python
+# plot log histogram
 plt.hist(np.log(np.abs(logit.coef_.flatten())))
 plt.ylabel("count")
 plt.xlabel("log(coefficient magnitude)");
@@ -361,6 +376,7 @@ plt.xlabel("log(coefficient magnitude)");
 
 
 ```python
+# plot top coefficients (by magnitude) for each model
 f, ax = plt.subplots(1,3, figsize=(16,6))
 coef_mag = np.abs(logit.coef_)
 class_names = ["Normal","Mild Cognitive Impairment","Alzheimer's Disease"]
@@ -396,6 +412,7 @@ Given that the logistic regression model above was overfit, one simple thing to 
 
 
 ```python
+# define and fit logistic regression model
 from sklearn.ensemble import RandomForestClassifier
 resp_var = 'DX_FINAL'
 depths = np.arange(1,50,1)
@@ -425,6 +442,7 @@ plt.legend();
 
 
 ```python
+# define tree model
 rand_forest = RandomForestClassifier(n_estimators=100, criterion='entropy', max_depth=6)
 rand_forest = rand_forest.fit(x_train.values, y_train[resp_var].values)
 ```
@@ -433,6 +451,7 @@ rand_forest = rand_forest.fit(x_train.values, y_train[resp_var].values)
 
 
 ```python
+# report test and train accuracy
 print("Train accuracy = {0:.3f}".format(rand_forest.score(x_train.values, y_train[resp_var].values)))
 print("Test accuracy = {0:.3f}".format(rand_forest.score(x_test.values, y_test[resp_var].values)))
 ```

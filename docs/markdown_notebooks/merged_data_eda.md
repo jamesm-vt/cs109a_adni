@@ -1,7 +1,8 @@
 ---
 title: ADNI Merge
 notebook: ..\markdown_notebooks\merged_data_eda.ipynb
-nav_include: 2
+section: 2
+subsection: 5
 ---
 
 ## Contents
@@ -66,6 +67,7 @@ Let's take an initial look at the merged dataset.
 
 
 ```python
+# imports
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -94,6 +96,8 @@ from sklearn.svm import SVR
 from mlxtend.classifier import StackingCVClassifier
 from mlxtend.regressor import StackingCVRegressor
 
+# Use the following to install mlxtend and to
+# update other libs to required (latest) versions
 """
 conda config --add channels conda-forge
 conda install -y mlxtend
@@ -158,6 +162,7 @@ Let's visualize the number of study participants per `VISCODE`.
 
 
 ```python
+# M represents months since the last visit (0 = baseline/initial visit)
 adni_by_month = adni_merge.groupby(by='M').count()
 particpants = adni_by_month['RID']
 visits = adni_merge.sort_values(by='M')['VISCODE'].unique()
@@ -183,8 +188,10 @@ Based on the design of the study as discussed above, we expect there to be a lot
 
 
 ```python
+# Calculate missing data
 missing_data = utils.calculate_missing_data(adni_merge)
 
+# Look at the top 10 columns in terms of missing values
 missing_data.head(10)
 ```
 
@@ -541,6 +548,7 @@ Let's examime the missing data from the baseline visit dataset.
 
 
 ```python
+# Calculate missing data
 missing_data = utils.calculate_missing_data(baseline)
 ```
 
@@ -562,6 +570,9 @@ Based on the study data, we know that not all biometrics are measured at every v
 
 
 ```python
+# For every column in the baseline (VISCODE='bl') with missing values, look for
+# a value in subsequent visits with the constraint that the DX code must
+# not have changed. Take the first (earliest) biometric measure available.
 
 baseline.sort_values(by='RID')
 missing_cols = baseline.columns[baseline.isnull().any()]
@@ -620,8 +631,10 @@ print(f'Updated {updated_values} of {missing_values} missing values.')
 
 
 ```python
+# Calculate missing data
 missing_data = utils.calculate_missing_data(baseline)
 
+# Look at the top 10 columns in terms of missing values
 missing_data.head(10)
 ```
 
@@ -735,10 +748,12 @@ There appears to be a lot of features with similar, if not identical, informatio
 
 
 ```python
+# Generate a correlation matrix of xxx_bl vs xxx
 corr_df = baseline.corr()
 cols = baseline.columns
 col1, col2, corr = [], [], []
 
+# Specifically check the correlation of xxx_bl to xxx
 for col in cols:
     if '_bl' in col.lower(): 
         drop_bl = col[0:-3]
@@ -748,6 +763,7 @@ for col in cols:
                 col2.append(drop_bl)
                 corr.append(corr_df.loc[col][drop_bl])
 
+# Display the results                
 bl_corr_df = pd.DataFrame({"Baseline column": col1, 'Alternate column': col2, "Correlation": corr})
 bl_corr_df
 ```
@@ -1042,6 +1058,7 @@ print("The new shape of the baseline subset is {}.".format(baseline.shape))
 
 
 ```python
+# Let's see what features we have now
 baseline.columns.sort_values()
 ```
 
@@ -1071,6 +1088,7 @@ We still have some columns that look very similar. These may contain non-numeric
 
 
 ```python
+# Columns to check for duplicates
 cols = ['ABETA', 'DX', 'EXAMDATE','FSVERSION',  'PTAU', 'TAU']
 
 bl_missing = []
@@ -1083,6 +1101,7 @@ for col in cols:
     match = (baseline[col] == baseline[col+'_bl']).sum()
     matching_vals.append((match + min(missing[-1], bl_missing[-1]))/len(baseline) * 100)
                  
+# Display the results                
 bl_dupes = pd.DataFrame({'Missing Values': missing,
                             'Baseline Missing Values': bl_missing,
                             'Percent Matching': matching_vals}, index=cols)
@@ -1164,10 +1183,13 @@ All of the pairs are nearly exact duplicates except `DX`|`DX_bl`, so we can drop
 
 
 ```python
+# Get a list of duplicate column names to drop
 dupe_cols = [col + '_bl' for col in cols]
 
+# Remove DX_bl until we investigate further
 del dupe_cols[dupe_cols.index('DX_bl')]
 
+# Drop the columns
 baseline = baseline.drop(labels=dupe_cols, axis=1)
 ```
 
@@ -1175,6 +1197,7 @@ baseline = baseline.drop(labels=dupe_cols, axis=1)
 
 
 ```python
+# See how DX maps to DX_bl
 baseline.drop_duplicates('DX_bl')[['DX_bl', 'DX']]
 ```
 
@@ -1246,8 +1269,10 @@ Although similar, the diagnoses in `DX_bl` are more specific than those in `DX`.
 
 
 ```python
+# Drop DX
 baseline = baseline.drop(labels=['DX'], axis=1)
 
+# Remap some of the DX_bl values
 baseline.DX_bl = baseline.DX_bl.replace('LMCI','MCI')
 baseline.DX_bl = baseline.DX_bl.replace('EMCI','MCI')
 baseline.DX_bl = baseline.DX_bl.replace('SMC','CN')
@@ -1571,6 +1596,7 @@ baseline = baseline.drop(labels=['update_stamp', 'Years_bl', 'SITE', 'VISCODE', 
 
 
 ```python
+# Let's see what features we have now
 baseline.columns.sort_values()
 ```
 
@@ -1597,6 +1623,7 @@ We have some non-numeric data in `ABETA`, `TAU`, and `PTAU`, such as '>1300' or 
 
 
 ```python
+# remove < or > 
 def remove_gt_lt(val):
     if type(val) == str:
         return float(val.replace('>', '').replace('<', ''))
@@ -1624,6 +1651,7 @@ There are additional (potentially valuable) data that are not included in the Me
 
 
 ```python
+# First set the baseline index to 'RID'
 baseline.index = baseline['RID']
 baseline = baseline.drop(labels='RID', axis=1)
 ```
@@ -1632,6 +1660,7 @@ baseline = baseline.drop(labels='RID', axis=1)
 
 
 ```python
+# Read in the additional patient data. Use RID as the index column
 pat_data = pd.read_csv('../data/Per_Patient/patient_firstidx_merge.csv', index_col='RID', na_values='-1')
 ```
 
@@ -1655,8 +1684,10 @@ Now we'll merge the ADNI_Merge dataset and cleaned Per_Patient dataset that we'v
 
 
 ```python
+# Merge baseline with pat_data
 pat_comb = pd.merge(baseline, pat_data, on='RID')
 
+# First drop cols that have only NA values
 pat_comb = pat_comb.dropna(axis='columns', thresh=1)
 ```
 
@@ -1742,6 +1773,7 @@ def get_combined_data(missing_thresh):
 
 
 ```python
+# Set the missing data threshold
 missing_thresh = .5
 ```
 
@@ -1751,6 +1783,7 @@ At this point, we have cleaned the data by removing duplicate/highly correlated 
 
 
 ```python
+# Read in data and identify categorical and non-categorical features
 pat_comb, categoricals, non_cat = get_combined_data(missing_thresh)
 ```
 
@@ -1762,6 +1795,7 @@ pat_comb, categoricals, non_cat = get_combined_data(missing_thresh)
 
 
 ```python
+# Scale all columns that are non-categorical
 pat_comb = utils.scale_cols(data=pat_comb, cols=non_cat, scaler=MinMaxScaler())
 ```
 
@@ -2235,6 +2269,7 @@ pat_comb, imputed_cols, scores, errors = utils.impute_values_classification(pat_
 
 
 ```python
+# Save imputed data
 clf_data_file = f'../data/Imputed/Combined/data_missing{missing_thresh}_StackingCVClassifier_impute{impute_thresh}.csv'
 pat_comb.to_csv(clf_data_file)
 ```
@@ -2243,6 +2278,7 @@ pat_comb.to_csv(clf_data_file)
 
 
 ```python
+# Save models and scores
 models, m_score = list(map(list, zip(*scores)))
 
 def name_model(model, col):
@@ -2332,6 +2368,7 @@ scores_pd.head()
 
 
 ```python
+# Save errors
 err_file = f'../data/Imputed/Combined/errors_missing{missing_thresh}_StackingCVClassifier_impute{impute_thresh}.csv'
 try:
     pd.Series(errors).to_csv(err_file)
@@ -2381,6 +2418,7 @@ def make_reg_stack():
 
 
 ```python
+# Read in imputed (classification) data
 impute_thresh = .25
 pat_comb = pd.read_csv(clf_data_file, index_col='RID', na_values='-1')
 ```
@@ -2476,6 +2514,7 @@ pat_comb, imputed_cols, scores = utils.impute_values_regression(pat_comb,
 
 
 ```python
+# Save imputed data
 final_data_file = f'../data/Imputed/Combined/data_missing{missing_thresh}_StackingCVRegressor_impute{impute_thresh}.csv'
 pat_comb.to_csv(final_data_file)
 ```
@@ -2484,6 +2523,7 @@ pat_comb.to_csv(final_data_file)
 
 
 ```python
+# Save models and scores
 models, m_score = list(map(list, zip(*scores)))
 
 def name_model(model, col):
@@ -2497,6 +2537,7 @@ model_names = [name_model(model, col) for model, col in zip(models, imputed_cols
 
 
 ```python
+# Save the scores
 scores_pd = pd.read_csv(clf_scores_file, index_col='Feature')
 df = pd.DataFrame({'Score': m_score, 'Model': model_names}, index=imputed_cols)
 df.index.name = 'Feature'

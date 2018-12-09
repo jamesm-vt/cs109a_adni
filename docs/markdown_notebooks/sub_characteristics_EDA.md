@@ -1,6 +1,8 @@
 ---
-title: iterate over dataframes
+title: Subject Characteristics Exploratory Data Analysis
 notebook: ..\markdown_notebooks\sub_characteristics_EDA.ipynb
+section: 2
+subsection: 8
 ---
 
 ## Contents
@@ -28,6 +30,7 @@ sns.set()
 import statsmodels.api as sm
 from statsmodels.regression.linear_model import OLS
 
+# import custom dependencies
 import sys
 from ADNI_utilities import define_terms, describe_meta_data, paths_with_ext, append_meta_cols
 ```
@@ -36,6 +39,7 @@ from ADNI_utilities import define_terms, describe_meta_data, paths_with_ext, app
 
 
 ```python
+# define figure defaults
 mpl.rc('axes', labelsize=10, titlesize=14)
 mpl.rc('figure', figsize=[6,4], titlesize=14)
 mpl.rc('legend', fontsize=12)
@@ -57,6 +61,7 @@ There are multiple files to consider. Before looking in depth at specific data, 
 
 
 ```python
+# import adni dictionary
 adni_dict_df = pd.read_csv("../data/study info/DATADIC.csv")
 ```
 
@@ -64,6 +69,7 @@ adni_dict_df = pd.read_csv("../data/study info/DATADIC.csv")
 
 
 ```python
+# print meta data for each file
 csv_paths = paths_with_ext(directory="../data/Subject_Characteristics/")
 for path in csv_paths:
     print("\n" + path + "\n")
@@ -121,8 +127,10 @@ It looks like there is some information on family history which is split into a 
 
 
 ```python
+# intialize neuroexam results and describe entries
 demo_df = pd.read_csv("../data/Subject_Characteristics/PTDEMOG.csv")
 
+# create dictionary_df for NEUROEXM table
 demo_dict = define_terms(demo_df, adni_dict_df, table_name="PTDEMOG");
 demo_dict
 ```
@@ -424,6 +432,7 @@ Many of the columns above are not likely to be useful because they are dependent
 
 
 ```python
+# define columns to inspect unique values
 cols = ["PTWORK","PTHOME","PTEDUCAT","PTMARRY","PTMCIBEG"]
 [print("{0}:\n{1}\n".format(col,demo_df[col].unique())) for col in cols];
 
@@ -455,6 +464,7 @@ We can see from the summary above that `-1`, `-4`, and `NaN` are all used for mi
 
 
 ```python
+# PTEDUCAT histogram
 plt.hist(demo_df.PTEDUCAT.dropna())
 plt.xlabel("Education")
 plt.title("Patient Education Histogram");
@@ -470,6 +480,7 @@ Now we can define our columns of interest.
 
 
 ```python
+# define columns to keep
 demo_cols  = demo_df.columns[[9,11,12,13,14,18,22,29,30]]
 demo_cols
 ```
@@ -489,6 +500,7 @@ Next we should inspect the data types and make sure the format of each column ma
 
 
 ```python
+# print data types for each col
 demo_df[demo_cols].dtypes
 ```
 
@@ -514,8 +526,10 @@ All of our columns are stored as floats, but most of them contain categorical va
 
 
 ```python
+# replace missing values with -1
 demo_df.replace({np.nan:-1, -4:-1}, inplace=True)
 
+# convert categorical columns to int
 categoricals = demo_cols[[0,2,3,5,6,7,8]]
 demo_df[categoricals] = demo_df[categoricals].astype(int)
 demo_df[demo_cols].dtypes
@@ -545,8 +559,10 @@ With the patient family history information spread across multiple files, it wil
 
 
 ```python
+# intialize family history results and describe entries
 fhq_df = pd.read_csv("../data/Subject_Characteristics/FHQ.csv")
 
+# create dictionary_df for NEUROEXM table
 fhq_dict = define_terms(fhq_df, adni_dict_df, table_name="FHQ");
 fhq_dict
 ```
@@ -712,8 +728,10 @@ The family history questionnaire used in ADNI1, ADNIGO, and ADNI2 contains only 
 
 
 ```python
+# intialize family history results and describe entries
 parent_df = pd.read_csv("../data/Subject_Characteristics/FAMXHPAR.csv")
 
+# create dictionary_df for NEUROEXM table
 parent_dict = define_terms(parent_df, adni_dict_df, table_name="FAMHXPAR");
 parent_dict
 ```
@@ -911,6 +929,7 @@ The table above shows that information about the presence of dementia and alzhei
 
 
 ```python
+# concatenate data from both dataframes along rows
 rid = np.hstack((fhq_df.RID.values,parent_df.RID.values))
 viscode = np.hstack((fhq_df.VISCODE.values,parent_df.VISCODE.values))
 momdem = np.hstack((fhq_df.FHQMOM.values,parent_df.MOTHDEM.values))
@@ -918,8 +937,10 @@ momad = np.hstack((fhq_df.FHQMOMAD.values,parent_df.MOTHAD.values))
 daddem = np.hstack((fhq_df.FHQDAD.values,parent_df.FATHDEM.values))
 dadad = np.hstack((fhq_df.FHQDADAD.values,parent_df.FATHAD.values))
 
+# concatenate features along columns
 fam_data = np.vstack((rid,viscode,momdem,momad,daddem,dadad)).T
 
+# define a new dataframe
 fam_df = pd.DataFrame(columns=["RID","VISCODE","MOMDEM","MOMAD","DADDEM","DADAD"], data=fam_data)
 ```
 
@@ -927,6 +948,7 @@ fam_df = pd.DataFrame(columns=["RID","VISCODE","MOMDEM","MOMAD","DADDEM","DADAD"
 
 
 ```python
+# inspect header
 fam_df.head()
 ```
 
@@ -1017,10 +1039,12 @@ We can see that all the values above are stored as floats. Now we need to ensure
 
 
 ```python
+# replace missing values with -1
 fam_df.replace({np.nan:-1, -4:-1}, inplace=True)
 int_cols = ["RID","MOMDEM","MOMAD","DADDEM","DADAD"]
 fam_df[int_cols] = fam_df[int_cols].astype(int)
 
+# record columns to keep
 fam_cols = fam_df.columns
 ```
 
@@ -1032,10 +1056,12 @@ With the columns from each data set hand-picked, the appropriate data types sele
 
 
 ```python
+# intialize dataframe list and empty placeholder
 all_dfs = [demo_df, fam_df]
 all_df_cols = [demo_cols, fam_cols]
 df_names = ["demographics","famhist"]
 
+# iterate over dataframes
 for i,df in enumerate(all_dfs):
     
     # ensure RID is in column list for indexing

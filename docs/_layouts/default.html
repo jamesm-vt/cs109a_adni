@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
 {% seo %}
-    <link href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}" rel="stylesheet">
+    <link href="/assets/css/style.css" rel="stylesheet">
     <title>{{page.title}}</title>
     <!-- mathjax config similar to math.stackexchange -->
     <script type="text/x-mathjax-config">
@@ -21,26 +21,108 @@
     });
     </script>
     <script src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML" type="text/javascript"></script>
+    <style>
+      .sidenav {
+          height: 100%;
+          width: 250px;
+          position: fixed;
+          z-index: 1;
+          background-color: #111;
+          padding-top: 20px;
+          float: left;
+      }
+      
+      .sidenav a {
+          padding: 6px 8px 6px 16px;
+          text-decoration: none;
+          color: #9e9e9e;
+          display: block;
+      }
+
+      .sidenav p{
+        color: rgb(233, 233, 233);
+        padding: 6px 8px 6px 16px;
+        text-decoration: none;
+        font-size: 25px;
+        display: block;
+      }
+      
+      .sidenav a:hover {
+          color: #f1f1f1;
+      }
+
+      .main_nav{
+        position: relative;
+        margin-left: 0px;
+        font-size: 20px;
+      }
+      .sub_nav {
+        position: relative;
+        margin-bottom: 6px;
+        margin-top: 0px;
+        margin-left: 25px;
+        margin-right: 10px;
+        font-size: 16px;
+      }
+      
+      .main {
+          font-size: 16px; /* Increased text to enable scrolling */
+          padding: 0px 10px;
+          width: 50%;
+          margin-left: auto;
+          margin-right: auto;
+      }
+      
+      @media screen and (max-height: 450px) {
+          .sidenav {padding-top: 15px;}
+          .sidenav a {font-size: 18px;}
+      }
+    </style>
   </head>
   <body>
-    <div class="container-lg px-3 my-5 markdown-body">
-      <nav class="group">
-        {% if site.title and site.title != page.title %}
-           <a href="{{ "/" | absolute_url }}">{{ site.title }}</a>
-        {% endif %}
-        {% assign navigation_pages = site.html_pages | sort: 'nav_include' %}
-        {% for node in navigation_pages %}
-                {% if node.nav_include %}
-                    {% if page.url == node.url %}
-                      &nbsp;|&nbsp;<a class="active" href="{{node.url | prepend: site.baseurl}}" class="active" style="color:#b4d5fe">{{node.title}}</a>
-                    {% else %}
-                      &nbsp;|&nbsp;<a href="{{node.url | prepend: site.baseurl}}">{{node.title}}</a>
-                    {% endif %}
-                {% endif %}
-        {% endfor %}
-        </nav>
 
-      <h1>{{page.title}}</h1>
+    <!-- Configure Side Navigation Bar-->
+    <div id="mySidenav" class="sidenav">
+      <!--Note the current section and sort all pages by section-->
+      {% assign current_section = page.section %}
+      {% assign sorted_by_section = site.html_pages | sort: "section" %}
+      {% assign pages_by_section = sorted_by_section | group_by: "section" %}
+
+      <!--Iterate over all sections in order-->
+      {% for section in pages_by_section %}
+
+        <!--Sort the current section by subsection number-->
+        {% assign sorted_items = section.items | sort: "subsection" %}
+        {% for node in sorted_items %}
+
+        <!--Configure urls under the current section-->
+          {% if node.section == current_section %}
+            <!--Highlight the current url-->
+            {% if page.url == node.url %}
+              {% if node.subsection==1 %}
+                <a href="{{node.url | prepend: site.baseurl}}" class="main_nav" style="color:#b4d5fe">{{node.title}}</a>
+              {% else %}
+                <a href="{{node.url | prepend: site.baseurl}}" class="sub_nav" style="color:#b4d5fe">{{node.title}}</a>
+              {% endif %}
+            {% else %}
+              {% if node.subsection==1 %}
+                <a href="{{node.url | prepend: site.baseurl}}" class="main_nav">{{node.title}}</a>
+              {% else %}
+                <a href="{{node.url | prepend: site.baseurl}}" class="sub_nav">{{node.title}}</a>
+              {% endif %}
+            {% endif %}
+          <!--Configure section urls only for urls not under the current section-->
+          {% elsif node.subsection == 1 %}
+            <a href="{{node.url | prepend: site.baseurl}}" class="main_nav">{{node.title}}</a>
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
+    </div>
+    
+    <!-- Add all page content inside this div if you want the side nav to push page content to the right (not used if you only want the sidenav to sit on top of the page -->
+    <div class="main markdown-body">
+
+      <h1 style="padding-top: 20px; padding-bottom: 30px">{{page.title}}</h1>
 
       {{ content }}
 

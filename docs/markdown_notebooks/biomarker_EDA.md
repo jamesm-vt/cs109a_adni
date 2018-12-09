@@ -1,6 +1,8 @@
 ---
-title: iterate over dataframes
+title: Biomarker Exploratory Data Analysis
 notebook: ..\markdown_notebooks\biomarker_EDA.ipynb
+section: 2
+subsection: 2
 ---
 
 ## Contents
@@ -25,6 +27,7 @@ sns.set()
 import statsmodels.api as sm
 from statsmodels.regression.linear_model import OLS
 
+# import custom dependencies
 import sys
 sys.path.append('../ADNI_')
 from ADNI_utilities import define_terms, describe_meta_data, append_meta_cols
@@ -36,8 +39,10 @@ Initialize data structures
 
 
 ```python
+# import adni dictionary
 apo_dict = pd.read_csv("../data/Biomarker Data/APOERES_DICT.csv")
 
+# import data set specific dictionaries
 csf_dict = pd.read_csv("../data/Biomarker Data/UPENNBIOMK_MASTER_DICT.csv")
 lab_dict = pd.read_csv("../data/Biomarker Data/LABDATA_DICT.csv")
 adni_dict_df = pd.read_csv("../data/study info/DATADIC.csv")
@@ -47,6 +52,7 @@ adni_dict_df = pd.read_csv("../data/study info/DATADIC.csv")
 
 
 ```python
+# define dataframes from the biomarker dataset
 apo_df = pd.read_csv("../data/Biomarker Data/APOERES.csv")
 csf_df = pd.read_csv("../data/Biomarker Data/UPENNBIOMK_MASTER.csv")
 lab_df =  pd.read_csv("../data/Biomarker Data/LABDATA.csv")
@@ -62,6 +68,7 @@ The APOERES table contains information about patient alleles for the ApoE gene w
 
 
 ```python
+# describe data structure
 describe_meta_data(apo_df)
 ```
 
@@ -80,6 +87,7 @@ Looks like there is a single entry for each patient with a single phase spanned.
 
 
 ```python
+# define and print terms from apo table
 term_defs = define_terms(apo_df, adni_dict_df, "APOERES")
 term_defs
 ```
@@ -253,6 +261,7 @@ The two columns of interest here are categorical variables describing the two al
 
 
 ```python
+# record the columns of interest
 apo_cols = ["APGEN1","APGEN2"]
 ```
 
@@ -260,6 +269,7 @@ apo_cols = ["APGEN1","APGEN2"]
 
 
 ```python
+# check to ensure data types are int for categorical data
 apo_df[apo_cols].dtypes
 ```
 
@@ -296,6 +306,7 @@ describe_meta_data(csf_df)
 
 
 ```python
+# define and print terms from CSF biomarker master table
 term_defs = define_terms(csf_df, csf_dict, "UPENNBIOMK_MASTER")
 term_defs
 ```
@@ -453,6 +464,7 @@ There is no phase information in this table. Looks like we won't be able to grou
 
 
 ```python
+# record columns for later use
 csf_cols = ["ABETA","TAU","PTAU"]
 ```
 
@@ -460,6 +472,7 @@ csf_cols = ["ABETA","TAU","PTAU"]
 
 
 ```python
+# check to ensure data type is float for continous variable
 csf_df[csf_cols].dtypes
 ```
 
@@ -481,6 +494,7 @@ The lab master data set contains lab results from a variety of chemical tests pe
 
 
 ```python
+# define and print terms from lab data master table
 describe_meta_data(lab_df)
 ```
 
@@ -499,6 +513,7 @@ As another example of disorganisation and non-standardization of ADNI data, the 
 
 
 ```python
+# create a function to extract lab codes from the lab dict (has a different structure from other dictionaries)
 def define_labcodes(df, dict_df):
     
     keys=["Test Code","Test Description"]
@@ -528,6 +543,7 @@ def define_labcodes(df, dict_df):
 
 
 ```python
+# extract lab codes and descriptions of each test
 lab_codes = define_labcodes(lab_df, lab_dict)
 lab_codes.head(10)
 ```
@@ -620,6 +636,7 @@ Since we have no apriori hypothesis about which of these lab measurements might 
 
 
 ```python
+# record all lab codes and use them to extract lab code data from 
 lab_cols = lab_codes["Test Code"]
 ```
 
@@ -637,6 +654,7 @@ Keeping this in mind, we can define a function to replace all alpha-numeric entr
 
 
 ```python
+# determine if a string contains any non numeric characters
 def is_number(string: str):
     
     # define valid numeric characters 
@@ -650,19 +668,26 @@ def is_number(string: str):
 
 
 ```python
+# find columns of lab df with strings
 str_cols = lab_df[lab_cols].dtypes == object
 str_cols = lab_cols[str_cols.values]
 
+# define anonymous function to replace missing data with NaN
 str_isnumber = lab_df[str_cols].apply(lambda x: x.apply(is_number))
 
+# convert values with strings to missing val (-1)
 str_vals = lab_df[str_cols].values
 str_vals[~str_isnumber] = '-1'
 num_vals = str_vals.astype(float)
 
+# store new numeric values in dataframe
 lab_df[str_cols] = num_vals
 
+# convert missing values to nan
 lab_df = lab_df.replace(to_replace=-1, value=np.nan)
 
+# look for columns where all values are missing
+# and remove them from the list of columns
 all_missing_cols = str_cols[(num_vals==-1).all(0)]
 lab_cols = list(set(lab_cols) - set(all_missing_cols))
 ```
@@ -671,6 +696,7 @@ lab_cols = list(set(lab_cols) - set(all_missing_cols))
 
 
 ```python
+# check to make sure all of our lab test columns are numeric
 lab_df[lab_cols].dtypes.unique()
 ```
 
@@ -689,10 +715,12 @@ Before moving on to additional analysis, we can save the dataframes with the mis
 
 
 ```python
+# intialize dataframe list and empty placeholder
 all_dfs = [apo_df, csf_df, lab_df]
 all_df_cols = [apo_cols, csf_cols, lab_cols]
 df_names = ["apoe","csf","lab"]
 
+# iterate over dataframes
 for i,df in enumerate(all_dfs):
     
     # ensure standardized missing value

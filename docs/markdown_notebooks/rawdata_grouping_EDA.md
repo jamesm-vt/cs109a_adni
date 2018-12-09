@@ -1,13 +1,17 @@
 ---
-title: Raw Data
+title: Raw Data - Per Patient Grouping
 notebook: ..\markdown_notebooks\rawdata_grouping_EDA.ipynb
-nav_include: 3
+section: 2
+subsection: 7
 ---
 
 ## Contents
 {:.no_toc}
 *  
 {: toc}
+
+
+
 
 
 <br>
@@ -40,6 +44,7 @@ from sklearn.model_selection import KFold
 import statsmodels.api as sm
 from statsmodels.regression.linear_model import OLS
 
+# import custom dependencies
 from ADNI_utilities import define_terms, describe_meta_data, paths_with_ext, append_meta_cols
 ```
 
@@ -74,6 +79,7 @@ The data used in this notebook will be a combination of raw ADNI data files prev
 
 
 ```python
+# import adni dictionary
 apo_dict = pd.read_csv("../data/Biomarker Data/APOERES_DICT.csv")
 ```
 
@@ -87,6 +93,7 @@ One possibility for aggregating the data is to take the first baseline (code: `b
 
 
 ```python
+# function that returns the number of records per patient from a dataframe
 def patient_num_records(df):
     
     # get indices grouped by patient
@@ -99,15 +106,19 @@ def patient_num_records(df):
 
 
 ```python
+# define group and bins
 grp = "VISCODE2"
 bins = np.arange(1,7,1)
 nbins = bins.shape[0]-1
 
+# get data paths
 csv_paths = paths_with_ext(directory="../data/Cleaned/")
 
+# configure subplots
 nrows = np.ceil(np.sqrt(len(csv_paths)))
 ncols = np.ceil(len(csv_paths)/nrows)
 
+# iterate over dataframes
 plt.figure(figsize=(20,20))
 
 for i, path in enumerate(csv_paths):
@@ -172,6 +183,7 @@ Plot the distribution of entry number per patient for each dataframe
 
 
 ```python
+# iterate over dataframes
 plt.figure(figsize=(20,20))
 for i, path in enumerate(csv_paths):
     
@@ -209,6 +221,7 @@ To assess whether the strategy of building a most complete entry is viable, we s
 
 
 ```python
+# define a function to extract the index-th entry for each patient from a datafame(df)
 def patient_ith_entry(df, index=0):
     
     # group by patient ID
@@ -225,6 +238,7 @@ def patient_ith_entry(df, index=0):
 
 
 ```python
+# define a function to extract the first non-nan entry for each patient and feature
 def patient_first_nonmissing_entry(df, missing_val=-1, index=0):
     
     # group by RID
@@ -247,10 +261,12 @@ Now populate two per patient dataframes using the above methods and compare the 
 
 
 ```python
+# initialize placeholders for new dataframes
 first_idx_dfs = []
 nonmissing_dfs = []
 missing_value = -1
 
+# iterate over dataframes
 plt.figure(figsize=(20,20))
 for i, path in enumerate(csv_paths):
     
@@ -291,15 +307,19 @@ For the purposes of our analysis, we will likely want to track the change in a p
 
 
 ```python
+# creat new diagnosis dataframes extracting the first and last entries per patient
 dx_df = pd.read_csv("../data/Cleaned/diagnosis_clean.csv", low_memory=False)
 first_dx_df, first_dx_df_rows = patient_ith_entry(dx_df, index=0)
 last_dx_df, last_dx_df_rows = patient_ith_entry(dx_df, index=-1)
 
+# create new features: baseline diagnosis, final diagnosis
 bl_dx = first_dx_df.DXCOMB.values
 final_dx = last_dx_df.DXCOMB.values
 
+# set final diagnosis to missing if patient only has one diagnosis
 final_dx[first_dx_df_rows == last_dx_df_rows] = -1
 
+# use first and last diagnosis to create new feature: change in diagnosis (baseline to final)
 change_dx = (final_dx-1)*3 + bl_dx
 change_dx[change_dx<1] = -1
 ```
@@ -308,12 +328,15 @@ change_dx[change_dx<1] = -1
 
 
 ```python
+# add features to per patient diagnosis df
 pd.options.mode.chained_assignment = None  # default='warn'
 first_dx_df["DX_BL"] = pd.Series(bl_dx, index=first_dx_df.index)
 first_dx_df["DX_FINAL"] = pd.Series(final_dx, index=first_dx_df.index)
 first_dx_df["DX_CHANGE"] = pd.Series(change_dx, index=first_dx_df.index)
 first_dx_df.head()
 
+# get the index of the per patient diagnosis dataframe and replace with the dataframe
+# containing our new featuress
 dx_df_idx = [i for i, path in enumerate(csv_paths) if "diagnosis" in path]
 first_idx_dfs[dx_df_idx[0]] = first_dx_df
 ```
@@ -328,10 +351,13 @@ Now we can build per patient datasets by concatenating the dataframes constructe
 
 
 ```python
+# intialize dataframe empty placeholder
 patient_first_idx_df = pd.DataFrame()
 
+# record the data type of each column (we'll need it later)
 all_dtypes = np.array([])
 
+# iterate over dataframes
 for i, df in enumerate(first_idx_dfs):
     
     # get columns for current df
@@ -356,6 +382,7 @@ for i, df in enumerate(first_idx_dfs):
 
 
 ```python
+# inspect the header of the new per patient dataframe
 patient_first_idx_df.head()
 ```
 
@@ -561,12 +588,15 @@ The concatenation was successful, but in the process of concatentating, pandas a
 
 
 ```python
+# convert missing values to -1
 patient_first_idx_df.replace({np.nan:-1, -4:-1}, inplace=True)
 
+# intialize dictionary {column: dtype,..} to set data types
 dtype_dict = dict.fromkeys(patient_first_idx_df.columns.values)
 for key, val in zip(patient_first_idx_df.columns.values,all_dtypes):
     dtype_dict[key] = val
 
+# convert dtypes
 patient_first_idx_df = patient_first_idx_df.astype(dtype_dict)
 ```
 
@@ -783,10 +813,13 @@ Now we can do the same for the per patient dataframe assembled with the first no
 
 
 ```python
+# intialize dataframe empty placeholder
 patient_nonmissing_df = pd.DataFrame()
 
+# record the data type of each column
 all_dtypes = np.array([])
 
+# iterate over dataframes
 for i, df in enumerate(nonmissing_dfs):
     
     # get columns for current df
@@ -811,12 +844,15 @@ for i, df in enumerate(nonmissing_dfs):
 
 
 ```python
+# convert missing values to -1
 patient_nonmissing_df.replace({np.nan:-1, -4:-1}, inplace=True)
 
+# intialize dictionary {column: dtype,..} to set data types
 dtype_dict = dict.fromkeys(patient_nonmissing_df.columns.values)
 for key, val in zip(patient_nonmissing_df.columns.values,all_dtypes):
     dtype_dict[key] = val
 
+# convert dtypes
 patient_nonmissing_df = patient_nonmissing_df.astype(dtype_dict)
 ```
 
@@ -824,6 +860,7 @@ patient_nonmissing_df = patient_nonmissing_df.astype(dtype_dict)
 
 
 ```python
+# inspect the header
 patient_nonmissing_df.head()
 ```
 
@@ -1029,6 +1066,7 @@ We can confirm that there is a unique entry for each patient and a unique list o
 
 
 ```python
+# confirm that there is indeed only one entry for each patient
 print(patient_nonmissing_df.shape)
 print(patient_nonmissing_df.index.unique().shape)
 print(patient_nonmissing_df.columns.unique().shape)
@@ -1059,11 +1097,14 @@ patient_nonmissing_df.to_csv("../data/Per_Patient/patient_nonmissingidx_merge.cs
 
 
 ```python
+# throw away any column with only nans
 all_missing_cols = pat_df.columns[np.isnan(pat_df.values).all(0)]
 pat_df = pat_df.drop(columns=all_missing_cols, axis=1)
 
+# throw away any row with nan in dx_comb
 no_dx = pat_df.DXCOMB.isna()
 
+# return df with rows dropped
 pat_df = pat_df.drop(index=pat_df.loc[no_dx].index)
 ```
 
@@ -1071,6 +1112,7 @@ pat_df = pat_df.drop(index=pat_df.loc[no_dx].index)
 
 
 ```python
+# compute mean of each numeric column with missing values
 replace_cols = pat_df.drop(columns="RID", axis=1).columns
 col_means = pat_df[replace_cols].apply(np.nanmean)
 is_missing = pat_df[replace_cols].isna().values
@@ -1111,6 +1153,7 @@ depths = np.arange(1,pat_df.shape[1],1)
 avg_train_score = np.empty(depths.shape, dtype=float)
 avg_test_score = np.empty(depths.shape, dtype=float)
 
+# fit decision tree at each depth and record accuracy
 for i, depth in enumerate(depths):
     clf = DecisionTreeClassifier(criterion="gini", max_depth=depth).fit(x_train,y_train)
     avg_train_score[i] = cross_val_score(clf, x_train, y_train, cv=5).mean()
@@ -1122,6 +1165,7 @@ ax.set_ylabel("mean CV score")
 ax.legend()
 ax.set_title("decision tree performance by depth");
 
+# train clf at best depth and report accuracy
 best_depth = depths[np.argmax(avg_train_score)]
 best_clf = DecisionTreeClassifier(criterion="gini", max_depth=best_depth).fit(x_train,y_train)
 print("Max Train Score at depth = %i" % best_depth)
@@ -1154,6 +1198,7 @@ print("mean accuracy (train): {0:.3f}".format(cross_val_score(tree, x_test, y_te
 
 
 ```python
+# lets compare it to a bad model
 np.histogram(pat_df.DXCOMB.values, bins=[1,2,3,4])[0]/pat_df.shape[0]
 ```
 
@@ -1168,6 +1213,8 @@ np.histogram(pat_df.DXCOMB.values, bins=[1,2,3,4])[0]/pat_df.shape[0]
 
 
 ```python
+# This code is adapted from
+# http://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html
 def show_tree_structure(clf):
     tree = clf.tree_
 
@@ -1251,6 +1298,7 @@ show_tree_structure(best_clf)
 
 
 ```python
+# print columns in order of importance
 splits = [9,0,16,62,23,12,48,43,41]
 x_train.columns[splits]
 ```
@@ -1274,6 +1322,7 @@ Let's try some dimensionality reduction with PCA.
 
 
 ```python
+# first scale the data from range 0-1
 scaler = MinMaxScaler()
 scaler = scaler.fit(x_train)
 scaled_train = scaler.transform(x_train)
@@ -1284,15 +1333,19 @@ scaled_test = scaler.transform(x_test)
 
 
 ```python
+# perform PCA on scaled data and store in new df
 pca = PCA(n_components=x_train.shape[1])
 pca.fit(scaled_train)
 
+# transform data and store in new dataframe
 columns = ['pc_%i' % i for i in range(x_train.shape[1])]
 df_pca = pd.DataFrame(pca.transform(scaled_train), columns=columns, index=train_df.index)
 
+# get design matrices for train and test
 pca_x_train = df_pca.values
 pca_x_test = pca.transform(scaled_test)
 
+# store response var
 df_pca["DX"] = y_train
 ```
 

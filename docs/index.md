@@ -1,5 +1,8 @@
 ---
-title: Predicting Alzheimer's diagnoses from early indicators
+title: Project Overview
+notebook:
+section: 1
+subsection: 1
 ---
 
 What is this project?

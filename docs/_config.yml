@@ -1,7 +1,8 @@
 theme: jekyll-theme-primer
-title: Support Vector Olives
+title: CS109a - Group 10 Final Project
 description: CS109a - Group 10 Final Project
 baseurl:
+repository: jamesm-vt/cs109a_adni
 markdown: kramdown
 kramdown:
     math_engine: mathjax

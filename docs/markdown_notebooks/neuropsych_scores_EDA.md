@@ -1,6 +1,8 @@
 ---
-title: iterate over dataframes
+title: Neuropsychological Scores Exploratory Data Analysis
 notebook: ..\markdown_notebooks\neuropsych_scores_EDA.ipynb
+section: 2
+subsection: 6
 ---
 
 ## Contents
@@ -28,6 +30,7 @@ sns.set()
 import statsmodels.api as sm
 from statsmodels.regression.linear_model import OLS
 
+# import custom dependencies
 from ADNI_utilities import define_terms, describe_meta_data, paths_with_ext, append_meta_cols
 ```
 
@@ -35,6 +38,7 @@ from ADNI_utilities import define_terms, describe_meta_data, paths_with_ext, app
 
 
 ```python
+# define figure defaults
 mpl.rc('axes', labelsize=10, titlesize=14)
 mpl.rc('figure', figsize=[6,4], titlesize=14)
 mpl.rc('legend', fontsize=12)
@@ -49,6 +53,7 @@ Import the ADNI dictionary to get readable definitions of features.
 
 
 ```python
+# import adni dictionary
 adni_dict_df = pd.read_csv("../data/study info/DATADIC.csv")
 ```
 
@@ -60,8 +65,10 @@ The Geriatric Depression scale is calculated from a battery of questioned design
 
 
 ```python
+# intialize neuroexam results and describe entries
 gds_df = pd.read_csv("../data/Neuropsychological/GDSCALE.csv")
 
+# create dictionary_df for NEUROEXM table
 gds_dict = define_terms(gds_df, adni_dict_df, table_name="GDSCALE");
 gds_dict
 ```
@@ -339,8 +346,10 @@ Most of the features here are raw data answers to the questions. Well just take 
 
 
 ```python
+# record columns
 gds_cols = ["GDTOTAL"]
 
+# standardize missingness and ensure float dtype
 gds_df.replace({np.nan:-1, -4:-1}, inplace=True)
 gds_df[gds_cols] = gds_df[gds_cols].astype(float)
 ```
@@ -351,8 +360,10 @@ gds_df[gds_cols] = gds_df[gds_cols].astype(float)
 
 
 ```python
+# intialize neuroexam results and describe entries
 mmse_df = pd.read_csv("../data/Neuropsychological/MMSE.csv", low_memory=False)
 
+# create dictionary_df for NEUROEXM table
 mmse_dict = define_terms(mmse_df, adni_dict_df, table_name="MMSE");
 mmse_dict
 ```
@@ -887,8 +898,10 @@ Most of the features here are raw data answers to the questions. Again we'll jus
 
 
 ```python
+# record columns
 mmse_cols = ["MMSCORE"]
 
+# standardize missingness and ensure float dtype
 mmse_df.replace({np.nan:-1, -4:-1}, inplace=True)
 mmse_df[mmse_cols] = mmse_df[mmse_cols].astype(float)
 ```
@@ -899,8 +912,10 @@ mmse_df[mmse_cols] = mmse_df[mmse_cols].astype(float)
 
 
 ```python
+# intialize neuroexam results and describe entries
 mhach_df = pd.read_csv("../data/Neuropsychological/MODHACH.csv", low_memory=False)
 
+# create dictionary_df for NEUROEXM table
 mhach_dict = define_terms(mhach_df, adni_dict_df, table_name="MODHACH");
 mhach_dict
 ```
@@ -1098,8 +1113,10 @@ Most of the features here are raw data answers to the questions. Again we'll jus
 
 
 ```python
+# record columns
 mhach_cols = ["HMSCORE"]
 
+# standardize missingness and ensure float dtype
 mhach_df.replace({np.nan:-1, -4:-1}, inplace=True)
 mhach_df[mhach_cols] = mhach_df[mhach_cols].astype(float)
 ```
@@ -1112,10 +1129,12 @@ With the columns from each data set hand-picked, the appropriate data types sele
 
 
 ```python
+# intialize dataframe list and empty placeholder
 all_dfs = [gds_df, mmse_df, mhach_df]
 all_df_cols = [gds_cols, mmse_cols, mhach_cols]
 df_names = ["depression","mmse","mhach"]
 
+# iterate over dataframes
 for i,df in enumerate(all_dfs):
     
     # ensure RID is in column list for indexing
