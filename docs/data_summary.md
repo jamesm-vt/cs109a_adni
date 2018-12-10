@@ -16,7 +16,7 @@ The Alzheimer’s Disease Neuroimaging Initiative (ADNI) is a global study that 
 
 {:.center}
 <figure class="image">
-    <img src="/data_summary_files/adni_phase_summary.png" alt="">
+    <img src="/cs109a_adni/data_summary_files/adni_phase_summary.png" alt="">
     <figcaption style="text-align: left">
         Figure 1. Summary of the measures collected during each ADNI phase (from ADNI website).
     </figcaption>
@@ -26,7 +26,7 @@ ADNI's data files have a longitudinal format with each observation corresponding
 
 {:.center}
 <figure class="image">
-    <img src="/data_summary_files/Patient_Demographics.svg" alt="" class="svg">
+    <img src="/cs109a_adni/data_summary_files/Patient_Demographics.svg" alt="" class="svg">
     <figcaption style="text-align: left">
         Figure 2. ADNI contains longitudinal data collected over multiple phases across many patient visits.
     </figcaption>
@@ -38,7 +38,7 @@ In additional to the raw data, ADNI provides a data set (adnimerge) that summari
 
 {:.center}
 <figure class="image">
-    <img src="/data_summary_files/PatientDemographics.svg" alt="" class="svg">
+    <img src="/cs109a_adni/data_summary_files/PatientDemographics.svg" alt="" class="svg">
     <figcaption style="text-align: left">
         Figure 3. Distributions of ADNI patient demographics.
     </figcaption>
@@ -50,7 +50,7 @@ Due to the length of the study, the diversity of measures recorded, and the cost
 
 {:.center}
 <figure class="image">
-    <img src="/data_summary_files/miss_by_feature.svg" alt="" style="width: 400px">
+    <img src="/cs109a_adni/data_summary_files/miss_by_feature.svg" alt="" style="width: 400px">
     <figcaption style="text-align: left">
         Figure 4. Histogram of percent missingness among the features present in the dataset.
     </figcaption>
@@ -60,7 +60,7 @@ Of additional concern is the fact that the missingness of ADNI data is not distr
 
 {:.center}
 <figure class="image">
-    <img src="/data_summary_files/adni_merge_missingness.png" alt="" style="width: 400px">
+    <img src="/cs109a_adni/data_summary_files/adni_merge_missingness.png" alt="" style="width: 400px">
     <figcaption style="text-align: left">
         Figure 5. Missing data overview of the adnimerge dataset. White indicates missing values. Sparkline on the right represents data completeness by row and the least(52) and highest(108) number of features missing in each entry of the database.
     </figcaption>
