@@ -1,5 +1,5 @@
 ---
-title: Medical History Exploratory Data Analysis
+title: Medical History
 notebook: ..\markdown_notebooks\medical_history_EDA.ipynb
 section: 2
 subsection: 4

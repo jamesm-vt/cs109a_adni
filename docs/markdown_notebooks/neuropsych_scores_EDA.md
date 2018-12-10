@@ -1,5 +1,5 @@
 ---
-title: Neuropsychological Scores Exploratory Data Analysis
+title: Cognitive Tests
 notebook: ..\markdown_notebooks\neuropsych_scores_EDA.ipynb
 section: 2
 subsection: 6
