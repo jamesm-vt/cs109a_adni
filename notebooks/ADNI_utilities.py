@@ -19,15 +19,31 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import StandardScaler
 
 
-# print term definitions and codes, and 
+
 def define_terms(data_df, dict_df, table_name=None, columns=None):
+    """Print human readable definitions for features of a raw data file
+    
+    # Arguments
+        data_df - raw data dataframe with features to define
+        dict_df - ADNI dictionary dataframe with feature definitions
+        table_name - (optional) ADNI code for the source table of data_df
+        columns - (optional) subset of features in the raw data file to define
+    
+    # Returns
+        A dictionary dataframe where each row is a defined term.
+    """
+
+    # define all columns if no subset is provided 
     if columns is None:
         columns = data_df.columns
+
+    # remove TBLNAME from the query if no table name is provided
     if table_name is None:
         keys = ["FLDNAME", "TYPE", "TEXT", "CODE"]
     else:
         keys = ["FLDNAME", "TYPE", "TBLNAME", "TEXT", "CODE"]
 
+    # iterate of features and extract definitions and term codes 
     term_dicts = []
     for col in columns:
 
@@ -50,22 +66,43 @@ def define_terms(data_df, dict_df, table_name=None, columns=None):
     return (data_dict)
 
 
-# function that searches recursively under an input directory for all files of a given extension
 def paths_with_ext(directory=None, extension=".csv"):
+    """Search recursively under input directory for all files of a given extension
+    
+    # Arguments
+        directory - Parent directory to search under.
+        extension - target file extension to filter results by
+    
+    # Returns
+        A list of complete file paths for all files of the matching extension under the parent directory.
+    """
+
+    # use current working directory if none is provided 
     if directory is None:
         directory = os.getcwd()
 
+    # initialize file paths placeholder and iterate over directories
     matches = []
     for root, dirnames, filenames in os.walk(directory):
+        # iterate over files in current directory
         for filename in filenames:
             if filename.endswith(extension):
+                # append file paths with matching extension
                 matches.append(os.path.join(root, filename))
 
     return (matches)
 
 
-# report num entries, columns, patients, and range of num records and phases covered
+
 def describe_meta_data(df):
+    """
+    Print summary information for a dataframe including:
+        - number of phases covered by the data
+        - number of observations in the data
+        - number of unique patient IDs in the data
+        - number of records per patient ID
+        - number of patients with more than one observation
+    """
     by_patient = df.groupby("RID")
     nRecords = by_patient.apply(len)
     nPatients = nRecords.shape[0]
@@ -111,6 +148,17 @@ def combine_patient_data(pat_df, new_df):
 
 # ensure that meta data columns are appended to column output list
 def append_meta_cols(df_cols, col_list):
+    """
+    Ensure that the mandatory meta data features are included in a list of features
+
+    # Arguments
+        df_cols - all column names in the target dataframe
+        col_list - current list of columns to extract
+
+    # Returns
+        An updated column list with patient ID (RID) and visit code (VISCODE)
+    """
+
     # ensure col_list is list
     if type(col_list) is not list:
         col_list = list(col_list)
@@ -118,6 +166,7 @@ def append_meta_cols(df_cols, col_list):
     # define columns to append
     append_cols = ["RID", "VISCODE", "VISCODE2"]
     for col in append_cols:
+        # append meta data columns if not already in the list
         if col not in col_list and col in df_cols:
             col_list.append(col)
 
