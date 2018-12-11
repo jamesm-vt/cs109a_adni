@@ -25,7 +25,7 @@ The Alzheimer’s Disease Neuroimaging Initiative (ADNI) is a global study that 
 ADNI's data files have a longitudinal format with each observation corresponding to a clinical visit for a single patient. The diversity of measures recorded from patients during the study requires that that they are collected at different clinicians in separate locations on different dates. The end result is that the separate visits often record very different information. Patients periodically have diagnostic visits where they are assigned one of the three diagnostic categories: Cognitively Normal(CN), Mild Cognitive Impairment(MCI), and Alzheimer’s Disease(AD) (Figure 1). ADNI recruits patients on a rolling basis with patients joining and dropping out of the study at each ADNI phase. The initial patient set at the start of the study in ADNI-1 represents the single largest cohort of patients, with a comparable number of patients joining in ADNI-2. A small fraction (~20%) of patients change diagnoses over the course of the study.
 
 {:.center}
-<figure class="image">
+<figure class="center_fig">
     <img src="/cs109a_adni/data_summary_files/Patient_Demographics.svg" alt="" class="svg">
     <figcaption style="text-align: left">
         Figure 2. ADNI contains longitudinal data collected over multiple phases across many patient visits.
@@ -39,7 +39,7 @@ In additional to the raw data, ADNI provides a data set (adnimerge) that summari
 {:.center}
 <figure class="center_fig">
     <img src="/cs109a_adni/data_summary_files/PatientDemographics.svg" alt="" class="svg">
-    <figcaption style="text-align: left">
+    <figcaption style="text-align: center">
         Figure 3. Distributions of ADNI patient demographics.
     </figcaption>
 </figure>
@@ -49,8 +49,8 @@ In additional to the raw data, ADNI provides a data set (adnimerge) that summari
 Due to the length of the study, the diversity of measures recorded, and the cost of the procedures involved,it is hardly surprising that much of the is data missing. Roughly half of the measures are missing 50% or more of the observations (Figure 4). Unfortunately, missingness is so prevalent in the data set that dropping observations or features with missingness will leave us with nothing to model. Filling in missing values with some method of imputation is a critical.
 
 {:.center}
-<figure class="image">
-    <img src="/cs109a_adni/data_summary_files/miss_by_feature.svg" alt="" style="width: 400px">
+<figure class="center_fig">
+    <img src="/cs109a_adni/data_summary_files/miss_by_feature.svg" alt="" style="width: 650px">
     <figcaption style="text-align: left">
         Figure 4. Histogram of percent missingness among the features present in the dataset.
     </figcaption>
@@ -59,8 +59,8 @@ Due to the length of the study, the diversity of measures recorded, and the cost
 Of additional concern is the fact that the missingness of ADNI data is not distributed randomly. A look at the raw data in adnimerge shows large chunks of missing data along both rows and columns (Figure. 5). The structure of the missing data poses an additional challenges in replacing the missing data because it raises the possiblity bias in the remaining data. There are limits to how we can correct for any bias introduced by non-random missingness. So we will have to keep the possibility of bias in mind when interpreting our results. 
 
 {:.center}
-<figure class="image">
-    <img src="/cs109a_adni/data_summary_files/adni_merge_missingness.png" alt="" style="width: 400px">
+<figure class="center_fig">
+    <img src="/cs109a_adni/data_summary_files/adni_merge_missingness.png" alt="" style="width: 650px">
     <figcaption style="text-align: left">
         Figure 5. Missing data overview of the adnimerge dataset. White indicates missing values. Sparkline on the right represents data completeness by row and the least(52) and highest(108) number of features missing in each entry of the database.
     </figcaption>
