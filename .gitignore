@@ -1,5 +1,7 @@
-*/.DS_Store
-*/.ipynb_checkpoints/*
-*/__pycache__/*
-*/.ipynb_checkpoints/*
-.idea/*
+.DS_Store
+.ipynb_checkpoints/
+__pycache__/
+*.py[cod]
+.idea/
+.project
+.atom
