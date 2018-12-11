@@ -23,8 +23,8 @@ To assess whether we can expect model-based imputation to add signal to the data
 
 {:.center}
 <figure class="center_fig">
-    <img src="/cs109a_adni/imputation_overview/corrcoef_hist.svg" alt="" class="image">
-    <figcaption style="text-align: left">
+    <img src="/cs109a_adni/imputation_overview_files/corrcoef_hist.svg" class="image">
+    <figcaption class="center_cap">
         Figure 1. The features of the per patient data set are slightly more correlated to one another than expected by random chance.
     </figcaption>
 </figure>
