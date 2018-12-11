@@ -37,7 +37,7 @@ ADNI's data files have a longitudinal format with each observation corresponding
 In additional to the raw data, ADNI provides a data set (adnimerge) that summarizes the most commonly used measures captured throughout the study. This data set compiles 113 features from more than 13,000 visits and 2,080 patients. The data comes from roughly an equal distribution of male and female patients aged between 54 and 91 years old with a mean age of 73 years old. The education level of the patients follows a roughly equal distribution across the three diagnostic categories in the data. It is noteworthy that the distribution of race and ethnicities in the data, however, is largely skewed toward non-hispanic, white patients (Figure 3). 
 
 {:.center}
-<figure class="image">
+<figure class="center_fig">
     <img src="/cs109a_adni/data_summary_files/PatientDemographics.svg" alt="" class="svg">
     <figcaption style="text-align: left">
         Figure 3. Distributions of ADNI patient demographics.
@@ -46,7 +46,7 @@ In additional to the raw data, ADNI provides a data set (adnimerge) that summari
 
 ## Data Missingness
 
-Due to the length of the study, the diversity of measures recorded, and the cost of the procedures involved, it is hardly surprising that much of the is data missing. Roughly half of the measures are missing 50% or more of the observations (Figure 4). Unfortunately, missingness is so prevalent in the data set that dropping observations or features with missingness will leave us with nothing to model. Filling in missing values with some method of imputation is a critical.
+Due to the length of the study, the diversity of measures recorded, and the cost of the procedures involved,it is hardly surprising that much of the is data missing. Roughly half of the measures are missing 50% or more of the observations (Figure 4). Unfortunately, missingness is so prevalent in the data set that dropping observations or features with missingness will leave us with nothing to model. Filling in missing values with some method of imputation is a critical.
 
 {:.center}
 <figure class="image">
