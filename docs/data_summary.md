@@ -15,8 +15,8 @@ subsection: 2
 The Alzheimer’s Disease Neuroimaging Initiative (ADNI) is a global study that aims to understand factors leading to the Alzheimer’s Disease (AD) and to track disease progression. The study began in 2004 and is currently funded to continue through 2021. Many universities in the US and Canada have contributed to ADNI with data collected from nearly 3,000 patients across 63 clincal sites. ADNI has progressed through 4 phases (ADNI1, ADNI-GO, ADNI-2, and ADNI-3) with distinct research goals (Figure 1). Although the central focus of ADNI is to provide neuroanatomical imaging on patients over time, the study also includes comprehensive information from genetic screens, clinical exam results,patient history, and clinical diagnosis for Alzheimer's Disease. In total, the ADNI data is distributed over **(insert number)** raw data tables.
 
 {:.center}
-<figure class="image">
-    <img src="/cs109a_adni/data_summary_files/adni_phase_summary.png" alt="">
+<figure class="center_fig">
+    <img src="/cs109a_adni/data_summary_files/adni_phase_summary.png" class="image">
     <figcaption style="text-align: left">
         Figure 1. Summary of the measures collected during each ADNI phase (from ADNI website).
     </figcaption>
@@ -26,7 +26,7 @@ ADNI's data files have a longitudinal format with each observation corresponding
 
 {:.center}
 <figure class="center_fig">
-    <img src="/cs109a_adni/data_summary_files/Patient_Demographics.svg" alt="" class="svg">
+    <img src="/cs109a_adni/data_summary_files/Patient_Demographics.svg" class="image">
     <figcaption style="text-align: left">
         Figure 2. ADNI contains longitudinal data collected over multiple phases across many patient visits.
     </figcaption>
@@ -38,7 +38,7 @@ In additional to the raw data, ADNI provides a data set (adnimerge) that summari
 
 {:.center}
 <figure class="center_fig">
-    <img src="/cs109a_adni/data_summary_files/PatientDemographics.svg" alt="" class="svg">
+    <img src="/cs109a_adni/data_summary_files/PatientDemographics.svg" class="image">
     <figcaption style="text-align: center">
         Figure 3. Distributions of ADNI patient demographics.
     </figcaption>
@@ -50,7 +50,7 @@ Due to the length of the study, the diversity of measures recorded, and the cost
 
 {:.center}
 <figure class="center_fig">
-    <img src="/cs109a_adni/data_summary_files/miss_by_feature.svg" alt="" style="width: 650px">
+    <img src="/cs109a_adni/data_summary_files/miss_by_feature.svg" class="image" style="width: 650px">
     <figcaption style="text-align: left">
         Figure 4. Histogram of percent missingness among the features present in the dataset.
     </figcaption>
@@ -60,7 +60,7 @@ Of additional concern is the fact that the missingness of ADNI data is not distr
 
 {:.center}
 <figure class="center_fig">
-    <img src="/cs109a_adni/data_summary_files/adni_merge_missingness.png" alt="" style="width: 650px">
+    <img src="/cs109a_adni/data_summary_files/adni_merge_missingness.png" class="image" style="width: 650px">
     <figcaption style="text-align: left">
         Figure 5. Missing data overview of the adnimerge dataset. White indicates missing values. Sparkline on the right represents data completeness by row and the least(52) and highest(108) number of features missing in each entry of the database.
     </figcaption>
