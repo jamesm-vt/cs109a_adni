@@ -15,9 +15,9 @@ subsection: 2
 The Alzheimer’s Disease Neuroimaging Initiative (ADNI) is a global study that aims to understand factors leading to the Alzheimer’s Disease (AD) and to track disease progression. The study began in 2004 and is currently funded to continue through 2021. Many universities in the US and Canada have contributed to ADNI with data collected from nearly 3,000 patients across 63 clincal sites. ADNI has progressed through 4 phases (ADNI1, ADNI-GO, ADNI-2, and ADNI-3) with distinct research goals (Figure 1). Although the central focus of ADNI is to provide neuroanatomical imaging on patients over time, the study also includes comprehensive information from genetic screens, clinical exam results,patient history, and clinical diagnosis for Alzheimer's Disease. In total, the ADNI data is distributed over **(insert number)** raw data tables.
 
 {:.center}
-<figure class="center_fig">
+<figure class="image">
     <img src="/cs109a_adni/data_summary_files/adni_phase_summary.png" class="image">
-    <figcaption style="text-align: left">
+    <figcaption style="text-align: center; padding: 30px">
         Figure 1. Summary of the measures collected during each ADNI phase (from ADNI website).
     </figcaption>
 </figure>
