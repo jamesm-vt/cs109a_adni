@@ -11,12 +11,15 @@ import numpy as np
 import pandas as pd
 import os
 
+import glob
+from joblib import dump, load
 from sklearn.model_selection import KFold
 from sklearn.model_selection import StratifiedKFold
 from sklearn.linear_model import LinearRegression
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
 
 
 
@@ -542,3 +545,66 @@ def calculate_missing_data(data):
     print(missing_df.quantile([.25, .5, .75, 1]))
 
     return missing_df
+
+
+def get_feature_names(data_path, design_mat, resp_vars):
+    file_w_path = data_path + design_mat
+    df = pd.read_csv(file_w_path, index_col='RID')
+    if 'modeled' in design_mat:
+        df = reverse_one_hot(resp_vars, df)
+
+    df = df.drop(resp_vars, axis=1).select_dtypes(['number'])
+    return list(df.columns)
+
+
+def reverse_one_hot(resp_set, imp_df):
+    """This function recreates response variables from one-hot-encoded datasets
+    
+    # Arguments
+        resp_set: contains a list of response variables' prefixes to be rebuilt
+        imp_df: contains the imputed dataset with the raw data
+    """
+    
+    col_set = imp_df.columns.tolist()
+    is_resp = [any([resp in col for resp in resp_set]) for col in col_set]
+    resp_cols = imp_df.columns[is_resp]
+    
+    # iterate of response prefixes
+    resp_data = []
+    for resp in resp_set:
+    
+        # get subset of columns corresponding to currest prefix
+        is_subset = [resp in col for col in col_set]
+        subset_cols = imp_df.columns[is_subset]
+    
+        # convert train data to column index of true value
+        tmp = np.argmax(imp_df[subset_cols].values,1)+1
+        tmp[~imp_df[subset_cols].values.any(1)] = 0
+        resp_data.append(tmp)
+    
+    # drop one-hot response vars and add new features
+    imp_df = imp_df.drop(columns=resp_cols, axis=1)
+    for col, data in zip(resp_set, resp_data):
+        imp_df[col] = pd.Series(np.array(data), index=imp_df.index)
+    
+    return imp_df
+
+# Load and return models from disk based on glob pattern
+def load_models(glob_ptrn):
+    model_list = glob.glob(glob_ptrn)
+    return [load(model) for model in model_list]
+
+
+# Return train/test data from the given desing matix
+def get_train_test(filename, rm_vars, resp_variable):
+    df = pd.read_csv(filename, index_col='RID')
+    df = reverse_one_hot(rm_vars, df)
+    df_train, df_test = train_test_split(df, test_size=.2, shuffle=True, random_state=42)
+
+    y_train = df_train[resp_variable]
+    X_train = df_train.drop(rm_vars, axis=1).select_dtypes(['number'])
+
+    y_test = df_test[resp_variable]
+    X_test = df_test.drop(rm_vars, axis=1).select_dtypes(['number'])
+    
+    return X_train, y_train, X_test, y_test
