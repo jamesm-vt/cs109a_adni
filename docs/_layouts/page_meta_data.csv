@@ -12,6 +12,6 @@ sub_characteristics_EDA,2,Subject Characterestics,7
 rawdata_grouping_EDA,3,Data Aggregation,1
 imputation_overview,4,Imputation,1
 imputation,4,Methods,2
-modeling_overview,5,Modeling,1
+modeling_summary,5,Modeling,1
 model_comparison,5,Model Comparison,2
 key_findings,6,Key Results,1

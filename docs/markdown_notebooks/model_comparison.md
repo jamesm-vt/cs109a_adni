@@ -25,6 +25,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set()
+
+from itertools import product
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
@@ -48,52 +50,13 @@ import statsmodels.api as sm
 from statsmodels.regression.linear_model import OLS
 
 # import custom dependencies
-import ADNI_utilities
+import ADNI_utilities as utils
 ```
 
 
 ## Reading and preparing the data
 
-We start by reading all the datasets from different imputation strategies and choosing the response variable to be used. 
-
-The rationale for hyper parameters choices can be found on the "Parameter finetunning" section.
-
-
-
-```python
-def reverse_one_hot(resp_set, imp_df):
-    """This function recreates response variables from one-hot-encoded datasets
-    
-    # Arguments
-        resp_set: contains a list of response variables' prefixes to be rebuilt
-        imp_df: contains the imputed dataset with the raw data
-    """
-    
-    col_set = imp_df.columns.tolist()
-    is_resp = [any([resp in col for resp in resp_set]) for col in col_set]
-    resp_cols = imp_df.columns[is_resp]
-    
-    # iterate of response prefixes
-    resp_data = []
-    for resp in resp_set:
-    
-        # get subset of columns corresponding to currest prefix
-        is_subset = [resp in col for col in col_set]
-        subset_cols = imp_df.columns[is_subset]
-    
-        # convert train data to column index of true value
-        tmp = np.argmax(imp_df[subset_cols].values,1)+1
-        tmp[~imp_df[subset_cols].values.any(1)] = 0
-        resp_data.append(tmp)
-    
-    # drop one-hot response vars and add new features
-    imp_df = imp_df.drop(columns=resp_cols, axis=1)
-    for col, data in zip(resp_set, resp_data):
-        imp_df[col] = pd.Series(np.array(data), index=imp_df.index)
-    
-    return imp_df
-```
-
+We have 5 datasets that we will use for modeling. Three of them use model-based imputation with different thresholds ($100\%$, $50\%$, and $30\%$) for missing values. Two use mean/mode based imputation at $30\%$ and $50\%$ thresholds.
 
 
 
@@ -136,28 +99,16 @@ run_binary = 1 #Set this variable to 1 if models with binary response variable a
 ```
 
 
-
-
-```python
-def get_feature_names(design_mat):
-        file_w_path = data_path + design_mat
-        df = pd.read_csv(file_w_path, index_col='RID')
-        if 'modeled' in design_mat:
-            df = reverse_one_hot(resp_vars, df)
-              
-        df = df.drop(resp_vars, axis=1).select_dtypes(['number'])
-        return list(df.columns)
-```
-
+We will try a variety of models on the imputed data. We've decided to use KNN, DecisionTree, LogisticRegression, AdaBoost, Bagging, and Random Forest. The function below will perform a Grid CV search over all imputed datasets and accumulate the results of the best models.
 
 
 
 ```python
 def train_classifier_cv(estimator, param_grid, cv=5):
     """Trains the given estimator on each design matrix using grid search and
-    corss validation. The best estimator and score are saved.
+    cross validation. The best estimator and score are saved.
     
-    # Argumenrts
+    # Arguments
         estimator: The estimator/classifier to train/score
         param_grid: the parameters to be used in the grid search
         cv: number of folds to be used for cross validation
@@ -172,7 +123,7 @@ def train_classifier_cv(estimator, param_grid, cv=5):
 
         df = pd.read_csv(file_w_path, index_col='RID')
         if 'modeled' in file_nm:
-            df = reverse_one_hot(resp_vars, df)
+            df = utils.reverse_one_hot(resp_vars, df)
               
         df_train, df_test = train_test_split(df, test_size=testsize, shuffle=True, random_state=rs)
 
@@ -189,7 +140,6 @@ def train_classifier_cv(estimator, param_grid, cv=5):
         X_test = df_test.drop(resp_vars, axis=1).select_dtypes(['number'])
 
         #Running the model and storing results
-
         gs = GridSearchCV(estimator, param_grid=param_grid, cv=cv, n_jobs=-1,
                           return_train_score=True, iid=False)
         gs.fit(X_train, y_train_multi)
@@ -327,7 +277,6 @@ This section will present the performance differences across the models tested b
 
 ```python
 #Plotting the results as a heat map
-
 fig, ax = plt.subplots(1,1, figsize=(12,6))
 
 ax = sns.heatmap(result_container_multi.astype('float64'), annot=True, linewidths=0.1, fmt='.3f', cmap='coolwarm')
@@ -337,29 +286,47 @@ plt.show()
 
 
 
-![png](model_comparison_files/model_comparison_15_0.png)
+![png](model_comparison_files/model_comparison_14_0.png)
 
+
+The heatmap above represents a brief summary of our findings. It shows test scores for the tested models on datasets built with different imputation strategies. The first finding is that kNN and Logistic Classification are consistently outperformed by any strategy using Decision Trees - both the simple trees and the ensemble methods using trees.
+
+Among the methods using decision trees, Bagging shows the greatest performance - achieving more than 80% accuracy regardless of the imputation strategy. Especially for Bagging, modeling seems like a better imputation strategy than using the mean of the initial values found on the data. Although this conclusion is not true with all models, it seems generally that on our problem, model-based imputation slightly improves model performance vs using the mean/mode imputation.
 
 We will now save the model results to disk for further analysis.
 
 
 
 ```python
+from joblib import dump, load
+
 # Save the feature importance information from the ensemble classifiers
 model_path = '../data/Models/Feature_Importance/'
 for key in list(estimators.keys()):
-    features = get_feature_names(key)
+    features = utils.get_feature_names(data_path, key, resp_vars)
     key_sub = key.split('data_')[1].split('pct')[0]
     for score, model in estimators[key]:
         model_nm = model.__repr__().split('(')[0]
+        dump(model, f'../data/Models/{model_nm}_{key_sub}.joblib') 
         
-        if getattr(model, 'estimators_', False):
+        # Check to see if estimators_ attribute exists (ensemble classifiers)
+        if getattr(model, 'estimators_', None) is not None:
             df = pd.DataFrame(columns=features)
             for estimator in model.estimators_:
-                df = df.append(pd.Series(estimator.feature_importances_, index=df.columns), ignore_index=True)
+                df = df.append(pd.Series(estimator.feature_importances_, index=df.columns),
+                               ignore_index=True)
             df.to_csv(model_path + f'{model_nm}_{key_sub}.csv')
+            
+        # Check to see if coef_ attribute exists
+        elif getattr(model, 'coef_', None) is not None:
+            df = pd.DataFrame(data=model.coef_, columns=features, index=model.classes_)
+            #df = df.append(pd.Series(model.coef_, index=df.columns), ignore_index=True)
+            df.to_csv(model_path + f'{model_nm}_{key_sub}.csv')
+            
 ```
 
+
+Next we will explore the decision boundaries of each model.
 
 ## Dimensionality reduction
 
@@ -406,9 +373,61 @@ As one can see in the plot above, there is not a strong explanatory power concen
 
 For this reason, added to the fact that similar results hold for all imputation strategies, we have decided not to use PCA as a tool to further improve our models.
 
-## Parameter tuning
 
-In this section, one will find the reasoning behind the choice of hyperparameters used in each fitted model. We will use the mean-imputed database with 30-pct threshold as the basis for hyperparameter fine-tunning.
+
+```python
+fig, axes = plt.subplots(2, 2, figsize=(12,10))
+
+from glob import glob
+feature_import = glob('../data/Models/Feature_Importance/*_modeled_upto_50.csv')
+    
+for fi, ax in zip(feature_import, axes.ravel()):
+    df = pd.read_csv(fi, index_col=0)
+    x = np.arange(1, df.shape[1]+1)
+    
+    title = fi.split('/')[-1].split('_')[0]
+    ax.set_xlabel('Features', size=14)
+    ax.set_ylabel('Feature Importance', size=14)
+    ax.set_title(title, size=16)
+    
+    for i in df.index:
+        ax.scatter(x, np.abs(df.loc[i]))
+        
+fig.tight_layout()
+fig.suptitle("Feature Importance of different models", size=20, y=1.05)
+plt.show()
+```
+
+
+
+![png](model_comparison_files/model_comparison_21_0.png)
+
+
+
+
+```python
+df.reindex_axis(df.mean().sort_values().index, axis=1)
+fig, axes = plt.subplots(1, 1, figsize=(8,8))
+
+from glob import glob
+feature_import = glob('../data/Models/Feature_Importance/*_modeled_upto_50.csv')
+    
+for fi, ax in zip(feature_import, axes.ravel()):
+    df = pd.read_csv(fi, index_col=0)
+    x = np.arange(1, df.shape[1]+1)
+    
+    ax.set_xlabel('Features', size=14)
+    ax.set_ylabel('Feature Importance', size=14)
+    ax.set_title(fi.split('/')[-1].split('_')[0], size=16)
+    
+    for i in df.index:
+        ax.scatter(x, df.loc[i])
+fig.tight_layout()
+fig.suptitle("Feature Importance of different models", size=20, y=1.05)
+plt.show()
+
+```
+
 
 
 
@@ -427,409 +446,3 @@ y_test_bin = df_test['DX_FINAL'].apply(lambda x: 1 if x == 3 else 0)
 X_test = df_test.drop(resp_vars, axis=1).select_dtypes(['number'])
 ```
 
-
-### Logistic classifier
-
-
-
-```python
-logistic = LogisticRegressionCV(multi_class="ovr", cv=4, penalty='l2').fit(X_train, y_train_multi)
-logistic.score(X_test, y_test_multi)
-```
-
-
-
-
-
-    0.7312348668280871
-
-
-
-
-
-```python
-#Repeating the process for the binary response variable
-logistic = LogisticRegressionCV(multi_class="ovr", cv=4, penalty='l2').fit(X_train, y_train_bin)
-logistic.score(X_test, y_test_bin)
-```
-
-
-
-
-
-    0.8692493946731235
-
-
-
-There is no hyper parameter to choose, but training/fit conditions were set.
-
-### kNN
-
-
-
-```python
-k_set = range(1,70)
-
-scores = []
-scores_test = []
-for i in k_set:
-    knn = KNeighborsClassifier(n_neighbors=i)
-    knn.fit(X_train, y_train_multi)
-    scores.append(np.mean(cross_val_score(knn, X_train, y_train_multi, cv=5)))
-    scores_test.append(knn.score(X_test, y_test_multi))
-
-fig, ax = plt.subplots(1,1, figsize=(12, 6))
-
-ax.plot(k_set, scores, 'g*-', label = 'Train CV score')
-ax.plot(k_set, scores_test, 'b*-', label = 'Test score')
-ax.set_xlabel('n_neighbors', size=14)
-ax.set_ylabel('Score', size=14)
-ax.legend(fontsize=14)
-ax.set_title('KNN Train/Test scores as a function of n_neighbors', size=18)
-
-plt.show()
-```
-
-
-
-![png](model_comparison_files/model_comparison_28_0.png)
-
-
-In the kNN models for the multi category response variable, `k=52` appears to be the optimal parameter.
-
-
-
-```python
-#Repeating the process for the binary response variable
-k_set = range(1,100)
-
-scores = []
-scores_test = []
-for i in k_set:
-    knn = KNeighborsClassifier(n_neighbors=i)
-    knn.fit(X_train, y_train_bin)
-    scores.append(np.mean(cross_val_score(knn, X_train, y_train_bin, cv=5)))
-    scores_test.append(knn.score(X_test, y_test_bin))
-
-fig, ax = plt.subplots(1,1, figsize=(12, 6))
-    
-ax.plot(k_set, scores, 'g*-', label = 'Train CV score')
-ax.plot(k_set, scores_test, 'b*-', label = 'Test score')
-ax.legend(fontsize=14)
-ax.set_xlabel('n_neighbors', size=14)
-ax.set_ylabel('Score', size=14)
-ax.set_title('KNN scores (Binary) as a function of n_neighbors', size=18)
-
-plt.show()
-```
-
-
-
-![png](model_comparison_files/model_comparison_30_0.png)
-
-
-In the kNN models for the binary response variable, `k=36` appears to be the optimal parameter.
-
-### Simple decision tree
-
-
-
-```python
-depths = range(1,25)
-
-scores = []
-scores_test = []
-for i in depths:
-    dec = DecisionTreeClassifier(max_depth=i)
-    dec.fit(X_train, y_train_multi)
-    scores.append(dec.score(X_train, y_train_multi))
-    scores_test.append(dec.score(X_test, y_test_multi))
-
-fig, ax = plt.subplots(1,1, figsize=(12, 6))
-
-ax.plot(depths, scores, 'g*-', label = 'Train score')
-ax.plot(depths, scores_test, 'b*-', label = 'Test score')
-ax.legend(fontsize=14)
-ax.set_xlabel('max_depth', size=14)
-ax.set_ylabel('Score', size=14)
-ax.set_title("DecisionTree Train/Test Scores - function of max_depth", size=18)
-
-plt.show()
-```
-
-
-
-![png](model_comparison_files/model_comparison_33_0.png)
-
-
-Among the Decision Tree models for the multi category response variable, `max_depth=3` appears to be the optimal parameter.
-
-
-
-```python
-#Repeating the process for the binary decision variable
-depths = range(1,25)
-
-scores = []
-scores_test = []
-for i in depths:
-    dec = DecisionTreeClassifier(max_depth=i)
-    dec.fit(X_train, y_train_bin)
-    scores.append(dec.score(X_train, y_train_bin))
-    scores_test.append(dec.score(X_test, y_test_bin))
-
-fig, ax = plt.subplots(1,1, figsize=(12, 6))
-
-ax.plot(depths, scores, 'g*-', label = 'Train score')
-ax.plot(depths, scores_test, 'b*-', label = 'Test score')
-ax.legend(fontsize=14)
-ax.set_xlabel('max_depth', size=14)
-ax.set_ylabel('Score', size=14)
-ax.set_title("DecisionTree Scores (Binary) - function of max_depth", size=18)
-
-plt.show()
-```
-
-
-
-![png](model_comparison_files/model_comparison_35_0.png)
-
-
-Among the Decision Tree models for the binary response variable, `max_depth=6` appears to be the optimal parameter.
-
-### Bagging decision tree
-
-
-
-```python
-num_trees = range(1,100)
-
-scores = []
-scores_test = []
-for i in num_trees:
-    bag = BaggingClassifier(DecisionTreeClassifier(max_depth=4), n_estimators=i)
-    bag.fit(X_train, y_train_multi)
-    scores.append(bag.score(X_train, y_train_multi))
-    scores_test.append(bag.score(X_test, y_test_multi))
-
-fig, ax = plt.subplots(1,1, figsize=(12, 6))
-
-ax.plot(num_trees, scores, 'g*-', label = 'Train score')
-ax.plot(num_trees, scores_test, 'b*-', label = 'Test score')
-ax.legend(fontsize=14)
-ax.set_xlabel('number of estimators',size=14)
-ax.set_ylabel('Score', size=14)
-ax.set_title('Bagging Train/Test scores - function of num estimators', size=18)
-
-plt.show()
-```
-
-
-
-![png](model_comparison_files/model_comparison_38_0.png)
-
-
-
-
-```python
-scores_test.index(max(scores_test))
-```
-
-
-
-
-
-    9
-
-
-
-Among the Bagging Decision Trees for the multi category response variable, `n_estimators=13` seems to be the best hyper parameter choice.
-
-
-
-```python
-#Repeating the process for the binary response variable
-num_trees = range(1,100)
-
-scores = []
-scores_test = []
-for i in num_trees:
-    bag = BaggingClassifier(DecisionTreeClassifier(max_depth=3), n_estimators=i)
-    bag.fit(X_train, y_train_bin)
-    scores.append(bag.score(X_train, y_train_bin))
-    scores_test.append(bag.score(X_test, y_test_bin))
-
-fig, ax = plt.subplots(1,1, figsize=(12, 6))
-
-ax.plot(num_trees, scores, 'g*-', label = 'Train score')
-ax.plot(num_trees, scores_test, 'b*-', label = 'Test score')
-ax.legend(fontsize=14)
-ax.set_xlabel('number of estimators', size=14)
-ax.set_ylabel('Score', size=14)
-ax.set_title('Bagging scores (Binary) - function of num estimators', size=18)
-
-plt.show()
-```
-
-
-
-![png](model_comparison_files/model_comparison_41_0.png)
-
-
-Among the Bagging Decision Trees for the binary response variable, `n_estimators=10` seems to be the best hyper parameter choice.
-
-### Boosting decision tree
-
-
-
-```python
-boo = AdaBoostClassifier(DecisionTreeClassifier(max_depth=4), n_estimators=800, learning_rate=0.5)
-boo.fit(X_train, y_train_multi)
-
-scores = list(boo.staged_score(X_train, y_train_multi))
-scores_test = list(boo.staged_score(X_test, y_test_multi))
-
-fig, ax = plt.subplots(1,1, figsize=(12, 6))
-
-ax.plot(range(1,801), scores, 'g-', label = 'Train score')
-ax.plot(range(1,801), scores_test, 'b-', label = 'Test score')
-ax.legend(fontsize=14)
-ax.set_xlabel('# of iterations', size=14)
-ax.set_ylabel('Score', size=14)
-ax.set_title('Boosting Train/Test Scores - function of iterations', size=18)
-
-plt.show()
-```
-
-
-
-![png](model_comparison_files/model_comparison_44_0.png)
-
-
-
-
-```python
-scores_test.index(max(scores_test))
-```
-
-
-
-
-
-    767
-
-
-
-The boosting procedure with 8 iterations seems to be our best choice of hyper parameters to predict the multi category response variable.
-
-
-
-```python
-#Repeating the process for the binary response variable
-boo = AdaBoostClassifier(DecisionTreeClassifier(max_depth=4), n_estimators=800, learning_rate=0.5)
-boo.fit(X_train, y_train_bin)
-
-scores = list(boo.staged_score(X_train, y_train_bin))
-scores_test = list(boo.staged_score(X_test, y_test_bin))
-
-fig, ax = plt.subplots(1,1, figsize=(12, 6))
-
-ax.plot(range(1,801), scores, 'g-', label = 'Train score')
-ax.plot(range(1,801), scores_test, 'b-', label = 'Test score')
-ax.legend(fontsize=14)
-ax.set_xlabel('# of iterations', size=14)
-ax.set_ylabel('Score', size=14)
-ax.set_title('Boosting Scores (Binary) - function of iterations', size=18)
-
-plt.show()
-```
-
-
-
-![png](model_comparison_files/model_comparison_47_0.png)
-
-
-
-
-```python
-scores_test.index(max(scores_test))
-```
-
-
-
-
-
-    749
-
-
-
-The boosting procedure with 595 iterations seems to be our best choice of hyper parameters to predict the binary response variable.
-
-### Random Forest
-
-
-
-```python
-depths = range(1,25)
-
-scores = []
-scores_test = []
-for i in depths:
-    rfc = RandomForestClassifier(n_estimators=50, max_depth=i)
-    rfc.fit(X_train, y_train_multi)
-    #scores.append(np.mean(cross_val_score(rfc, X_train, y_train_multi, cv=5)))
-    scores.append(rfc.score(X_train, y_train_multi))
-    scores_test.append(rfc.score(X_test, y_test_multi))
-
-fig, ax = plt.subplots(1,1, figsize=(12, 6))
-
-ax.plot(depths, scores, 'g*-', label = 'Train score')
-ax.plot(depths, scores_test, 'b*-', label = 'Test score')
-ax.legend(fontsize=14)
-ax.set_xlabel('max_depth', size=14)
-ax.set_ylabel('Score', size=14)
-ax.set_title('RandomForest Train/Test Scores - function of max_depth')
-
-plt.show()
-```
-
-
-
-![png](model_comparison_files/model_comparison_51_0.png)
-
-
-Among the Random Forest models for the multi category response variable, `max_depth=4` appears to be the optimal parameter.
-
-
-
-```python
-#Repeating the process for the binary response variable
-depths = range(1,25)
-
-scores = []
-scores_test = []
-for i in depths:
-    rfc = RandomForestClassifier(n_estimators=50, max_depth=i)
-    rfc.fit(X_train, y_train_bin)
-    #scores.append(np.mean(cross_val_score(rfc, X_train, y_train_bin, cv=5)))
-    scores.append(rfc.score(X_train, y_train_bin))
-    scores_test.append(rfc.score(X_test, y_test_bin))
-    
-fig, ax = plt.subplots(1,1, figsize=(12, 6))
-
-ax.plot(depths, scores, 'g*-', label = 'Train score')
-ax.plot(depths, scores_test, 'b*-', label = 'Test score')
-ax.legend(fontsize=14)
-ax.set_xlabel('max_depth', size=14)
-ax.set_ylabel('Score', size=14)
-ax.set_title('RandomForest Scores (Binary) - function of max_depth')
-
-plt.show()
-```
-
-
-
-![png](model_comparison_files/model_comparison_53_0.png)
-
-
-Among the Random Forest models for the binary response variable, `max_depth=8` appears to be the optimal parameter.
