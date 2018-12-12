@@ -19,15 +19,31 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import StandardScaler
 
 
-# print term definitions and codes, and 
+
 def define_terms(data_df, dict_df, table_name=None, columns=None):
+    """Print human readable definitions for features of a raw data file
+    
+    # Arguments
+        data_df - raw data dataframe with features to define
+        dict_df - ADNI dictionary dataframe with feature definitions
+        table_name - (optional) ADNI code for the source table of data_df
+        columns - (optional) subset of features in the raw data file to define
+    
+    # Returns
+        A dictionary dataframe where each row is a defined term.
+    """
+
+    # define all columns if no subset is provided 
     if columns is None:
         columns = data_df.columns
+
+    # remove TBLNAME from the query if no table name is provided
     if table_name is None:
         keys = ["FLDNAME", "TYPE", "TEXT", "CODE"]
     else:
         keys = ["FLDNAME", "TYPE", "TBLNAME", "TEXT", "CODE"]
 
+    # iterate of features and extract definitions and term codes 
     term_dicts = []
     for col in columns:
 
@@ -50,22 +66,43 @@ def define_terms(data_df, dict_df, table_name=None, columns=None):
     return (data_dict)
 
 
-# function that searches recursively under an input directory for all files of a given extension
 def paths_with_ext(directory=None, extension=".csv"):
+    """Search recursively under input directory for all files of a given extension
+    
+    # Arguments
+        directory - Parent directory to search under.
+        extension - target file extension to filter results by
+    
+    # Returns
+        A list of complete file paths for all files of the matching extension under the parent directory.
+    """
+
+    # use current working directory if none is provided 
     if directory is None:
         directory = os.getcwd()
 
+    # initialize file paths placeholder and iterate over directories
     matches = []
     for root, dirnames, filenames in os.walk(directory):
+        # iterate over files in current directory
         for filename in filenames:
             if filename.endswith(extension):
+                # append file paths with matching extension
                 matches.append(os.path.join(root, filename))
 
     return (matches)
 
 
-# report num entries, columns, patients, and range of num records and phases covered
+
 def describe_meta_data(df):
+    """
+    Print summary information for a dataframe including:
+        - number of phases covered by the data
+        - number of observations in the data
+        - number of unique patient IDs in the data
+        - number of records per patient ID
+        - number of patients with more than one observation
+    """
     by_patient = df.groupby("RID")
     nRecords = by_patient.apply(len)
     nPatients = nRecords.shape[0]
@@ -111,6 +148,17 @@ def combine_patient_data(pat_df, new_df):
 
 # ensure that meta data columns are appended to column output list
 def append_meta_cols(df_cols, col_list):
+    """
+    Ensure that the mandatory meta data features are included in a list of features
+
+    # Arguments
+        df_cols - all column names in the target dataframe
+        col_list - current list of columns to extract
+
+    # Returns
+        An updated column list with patient ID (RID) and visit code (VISCODE)
+    """
+
     # ensure col_list is list
     if type(col_list) is not list:
         col_list = list(col_list)
@@ -118,6 +166,7 @@ def append_meta_cols(df_cols, col_list):
     # define columns to append
     append_cols = ["RID", "VISCODE", "VISCODE2"]
     for col in append_cols:
+        # append meta data columns if not already in the list
         if col not in col_list and col in df_cols:
             col_list.append(col)
 
@@ -254,7 +303,7 @@ def impute_values_regression(data, cols=None, estimator=None, param_grid={}, ran
 
 
 def impute_values_classification(data, cols=None, estimator=None, param_grid={},
-                                 scoring="accuracy", impute_thresh=0.0):
+                                 scoring="accuracy", impute_thresh=0.25):
     """Impute missing data using the given classifier. For each column with
     missing data, this function will remove rows with null values for that columm.
     
@@ -362,6 +411,81 @@ def impute_values_classification(data, cols=None, estimator=None, param_grid={},
     # Return imputed data and scores
     return data, imputed, scores, errors
 
+
+
+def impute_errors(data, cols=None):
+    """Imputes classification features. This function does not use
+    KFold validation and is only intended for those features that
+    cannot be imputed with KFold due to the distribution of the
+    classes, i.e. some class counts are less than 'k' and therefore
+    an error occus during the fitting.
+    """
+    data = data.copy()
+    scores, errors, imputed = [], [], []
+    categories = list(cols)
+    impute_thresh = .25
+
+    for col in cols:
+
+        # Remove the category we're modeling/predicting
+        categories.pop(categories.index(col))
+
+        train = data.copy()
+
+        # Drop categorical cols from predictors if threshold is exceeded
+        train = drop_missing_cols(train, categories, impute_thresh)
+
+        # Identify categorical cols still in the dataset
+        subset = list(set(categories) & set(train.columns))
+
+        # Make categorical variables before we fit
+        train = pd.get_dummies(train, columns=subset, drop_first=True, dummy_na=True)
+
+        # Remove rows with missing data in the current col
+        data_w_nulls = train[train[col].isnull()]
+
+        # If there are no NAs, then make dummies and continue
+        if len(data_w_nulls) == 0:
+            data = pd.get_dummies(data, columns=[col], drop_first=True, dummy_na=False)
+            continue
+        
+        print(f'Imputing feature {cols.index(col) + 1} of {len(cols)}: {col}')
+        
+        # Train on the rest
+        data_wo_nulls = train.dropna(subset=[col])
+
+        # Pull out the current col as the reponse variable
+        X = data_wo_nulls.drop(labels=col, axis=1)
+        y = data_wo_nulls[col]
+
+        dtc = DecisionTreeClassifier(max_features="auto", class_weight="balanced", min_samples_leaf=3, max_depth=None)
+        ada = AdaBoostClassifier(base_estimator=dtc, n_estimators=100)
+         
+        try:
+            ada = ada.fit(X.values, y.values)
+        except:
+            print(f'Error fitting values for {col}')
+            print(y.value_counts())
+            data = data.drop(labels=col, axis=1)
+            continue
+        
+        imputed.append(col)
+        scores.append(ada.score(X, y))
+
+        # Now prepare and predict the missing values
+        data_w_nulls = data_w_nulls.drop(labels=col, axis=1)  # drop col we're predicting
+        data_w_nulls = data_w_nulls.fillna(data_w_nulls.mean())  # impute NaNs in other predictors
+        data_w_nulls = data_w_nulls.fillna(0)  # in case we can't impute the mean
+        preds = ada.predict(data_w_nulls.values)
+
+        # Update the dataset with predicted values
+        data.loc[data[col].isnull(), col] = preds
+
+        # Make the estimated variable categorical and add back into data
+        data = pd.get_dummies(data, columns=[col], drop_first=True, dummy_na=False)
+
+    # Return imputed data and scores
+    return data, imputed, scores, errors
 
 def drop_missing_cols(data:pd.DataFrame, cols=None, threshold=0.0):
     """Removes columns with missing data beyond the given threshold.

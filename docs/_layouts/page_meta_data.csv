@@ -1,0 +1,17 @@
+filename,section,title,subsection
+index,1,Project Overview,1
+data_summary,1,ADNI Data Summary,2
+data_missingness,1,0,3
+datacleaning_overview,2,Data Cleaning,1
+biomarker_EDA,2,Biomarkers,2
+diagnosis_EDA,2,Diagnosis,3
+medical_history_EDA,2,Medical History,4
+merged_data_eda,2,ADNI Merge,5
+neuropsych_scores_EDA,2,Cognitive Tests,6
+sub_characteristics_EDA,2,Subject Characterestics,7
+rawdata_grouping_EDA,3,Data Aggregation,1
+imputation_overview,4,Imputation,1
+imputation,4,Methods,2
+modeling_overview,5,Modeling,1
+model_comparison,5,Model Comparison,2
+key_findings,6,Key Results,1
