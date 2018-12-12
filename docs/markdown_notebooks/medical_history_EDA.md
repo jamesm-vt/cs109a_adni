@@ -11,7 +11,18 @@ subsection: 4
 {: toc}
 
 
-The purpose of this notebook is to explore and clean the medical history data available in ADNI.
+The purpose of this notebook is to explore, filter, and clean patient medical history data available in ADNI. Many of the measures collected in ADNI come from clinical or laboratory procedures that are unlikely to be performed on patients prior to any concerns about a cognitive deficit. Patient medical history is of particular interest because they may contain early indicators of Alzheimer's Disease.
+
+In total, ADNI contains patient medical history covering:
+
+- neurological exam results
+- baseline health assessments
+- routine physicals and vital signs
+- adverse medical events
+- drug prescriptions (current and past)
+
+
+Let's start by importing our python dependencies.
 
 **Import libraries**
 
@@ -43,14 +54,14 @@ mpl.rc('axes', labelsize=10, titlesize=14)
 mpl.rc('figure', figsize=[6,4], titlesize=14)
 mpl.rc('legend', fontsize=12)
 mpl.rc('lines', linewidth=2, color='k')
-mpl.rc('xtick', labelsize=10)
-mpl.rc('ytick', labelsize=10)
+mpl.rc('xtick', labelsize=12)
+mpl.rc('ytick', labelsize=12)
 ```
 
 
 ## Data meta analysis
 
-There are a lot of medical history data files. Before looking in depth at specific data, it may be helpful to inspect some summary information on each data set. To start we can profile the following for each file:
+There are a lot of medical history data files. Before looking in depth at specific data, it may be helpful to inspect some summary information on each data set to help eliminate some files from the analysis. To start we can profile the following for each file:
 
 - number of records
 - number of patients
@@ -230,17 +241,17 @@ for path in csv_paths:
 
 From the above summary we can see the files vary quite a lot in the number of entries, number of patients, and number of duplicate entries per patient. From the names of the files we can infer some of the information that might be contained in these files. For example, `INITHEALTH` and `BLSCHECK` likely contain some kind of intial or baseline health assessment. We can also se that `INITHEALTH` covers ADNI1-ANDIGO and `BLSCHECK` covers ADNI3.
 
-We can further profile the data by looking at the distribution of duplicate entries and missingness in the columns of each data set.
+We can further profile the data by looking at the **distribution of duplicate entries and missingness** in the columns of each data set.
 
 
 
 ```python
 # get all csv files under directory
 csv_paths = paths_with_ext(directory="../data/Medical_History/")
-nrows = np.ceil(np.sqrt(len(csv_paths)))
+nrows = 6
 ncols = np.ceil(len(csv_paths)/nrows)
 
-plt.figure(figsize=(20,12))
+plt.figure(figsize=(20,20))
 # iterate over files
 for i,path in enumerate(csv_paths):
     
@@ -259,11 +270,11 @@ for i,path in enumerate(csv_paths):
     plt.hist(frac_unique, color='b', label="unique", alpha=0.5, bins=np.linspace(0,1,10))
     plt.hist(frac_null, color=(1,.5,0), label="null", alpha=0.5, bins=np.linspace(0,1,10))
     plt.legend()
-    plt.xlabel("fraction of feature", FontSize=12)
-    plt.ylabel("num features")
+    plt.xlabel("fraction of feature", FontSize=14)
+    plt.ylabel("num features", FontSize=14)
     plt.title(os.path.basename(path))
 
-plt.subplots_adjust(hspace=0.5)
+plt.subplots_adjust(hspace=0.7)
 plt.gcf().savefig("test.pdf")
 ```
 
@@ -275,9 +286,9 @@ plt.gcf().savefig("test.pdf")
 From the above plots we can see the quite a few of the data sets are likely to have substantial nullity, including:
 `ADNI2_ECG`, `ADVERSE`, `AV45VITALS`, `INITHEALTH`, and `RECCMEDS`. None of the files seem to have a substantial presence of duplicity.
 
-## NEUROLOGICAL EXAM RESULTS
+## Neurological Exams
 
-Let's start with the neurological exam results. These records span all phases of ADNI and are likely to be highly relevant to alzheimer's diagnoses.
+These records span all phases of ADNI and include summary results of neurological impairments including motor and cognitive deficits. Let's import that data and see what measures are recorded.
 
 
 
@@ -696,7 +707,7 @@ nex_df.dtypes
 
 
 
-From the list above, it looks like the measures we are interested in are the columns with dtype = `float64`. The remaining columns all appear to be patient or visit meta data. However, it is worth noting that each of the columns with exam results essential take the form of `Normal` or `Abnormal`, which are categorical in nature. We should convert these to either boolean or integer before moving on. Before converting to `int64` we should check the format of missing values in the data. ADNI frequently uses `NaN`, `-1`, and `-4` to signify missing values.
+From the list above, it looks like the measures we are interested in are the columns with dtype = `float64`. These contains diagnostic results for measurements of patient reflexes and cognition. The remaining columns all appear to be patient or visit meta data. However, it is worth noting that each of the columns with exam results essential take the form of `Normal` or `Abnormal`, which are categorical in nature. We should convert these to either boolean or integer before moving on. Before converting to `int64` we should check the format of missing values in the data. ADNI frequently uses `NaN`, `-1`, and `-4` to signify missing values.
 
 
 
@@ -714,7 +725,7 @@ nex_df[nex_cols] = nex_df[nex_cols].values.astype(int)
 
 ## Medical History
 
-Next we'll investigate patient medical history as above.
+Next we'll investigate patient medical history as above. This data set includes an overview of patient medical history including phsyical and mental health as well as patient history of drug or alcohol abuse. 
 
 
 
@@ -1090,6 +1101,62 @@ From the term definitions above we can see that there are many interesting detai
 
 
 ```python
+# inspect feature data types
+med_df.dtypes
+```
+
+
+
+
+
+    Phase            object
+    ID                int64
+    RID               int64
+    SITEID            int64
+    VISCODE          object
+    VISCODE2         object
+    USERDATE         object
+    USERDATE2        object
+    EXAMDATE         object
+    MHSOURCE          int64
+    MHPSYCH           int64
+    MH2NEURL          int64
+    MH3HEAD           int64
+    MH4CARD           int64
+    MH5RESP           int64
+    MH6HEPAT          int64
+    MH7DERM           int64
+    MH8MUSCL          int64
+    MH9ENDO           int64
+    MH10GAST          int64
+    MH11HEMA          int64
+    MH12RENA          int64
+    MH13ALLE          int64
+    MH14ALCH          int64
+    MH14AALCH       float64
+    MH14BALCH       float64
+    MH14CALCH       float64
+    MH15DRUG          int64
+    MH15ADRUG       float64
+    MH15BDRUG       float64
+    MH16SMOK          int64
+    MH16ASMOK       float64
+    MH16BSMOK       float64
+    MH16CSMOK       float64
+    MH17MALI          int64
+    MH18SURG          int64
+    MH19OTHR          int64
+    MHCOMMEN         object
+    update_stamp     object
+    dtype: object
+
+
+
+
+
+```python
+
+
 # record the columns of interest
 med_cols = med_df.columns[10:36]
 ```
@@ -2019,7 +2086,7 @@ vitals_df[vitals_cols].dtypes.unique()
 
 
 
-## Saving the data to file
+## Save cleaned medical history file
 
 With the columns from each data set hand-picked, the appropriate data types selected, and the missingness standardized, we can write the new cleaned dataframes to file.
 

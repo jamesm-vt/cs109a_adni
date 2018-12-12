@@ -11,7 +11,7 @@ subsection: 7
 {: toc}
 
 
-The purpose of this notebook is to explore and clean the subject characteristics data available in ADNI.
+The purpose of this notebook is to explore and clean the subject characteristics data available in ADNI.The data in these files covers a broad range of patient information including but not limited to patient education, sex, and family history.
 
 **Import libraries**
 
@@ -26,9 +26,6 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set()
-
-import statsmodels.api as sm
-from statsmodels.regression.linear_model import OLS
 
 # import custom dependencies
 import sys
@@ -123,6 +120,16 @@ for path in csv_paths:
 It looks like there is some information on family history which is split into a few different .files. ADNI1-ADNI2 are covered under `FHQ.csv` and ADNI3 family history is split into `FAMXHPAR` and `FAMXHSIB`. We'll start with patient demographics since that seems to cover all patients and ADNI phases.
 
 ## Patient Demographics
+
+The patient demographics data set covers general information about the patients such has:
+
+- Gender
+- Date of birth
+- Marital Status
+- Handedness
+- Primary language
+
+Most of these features should fall under the category of predictors that we have no prior expectation will be linked to Alzheimer's.
 
 
 
@@ -475,7 +482,7 @@ plt.title("Patient Education Histogram");
 ![png](sub_characteristics_EDA_files/sub_characteristics_EDA_15_0.png)
 
 
-Now we can define our columns of interest.
+This distribution seems to match our expectation for a distribution of number of years of education. Now we can define our columns of interest.
 
 
 
@@ -554,7 +561,7 @@ demo_df[demo_cols].dtypes
 
 ## Patient Family History
 
-With the patient family history information spread across multiple files, it will be important to determine if the questions asked are consistent enough across phases to combine into a single family history table.
+These files contain information about history of dementia in the patient's family. With the patient family history information spread across multiple files, it will be important to determine if the questions asked are consistent enough across phases to combine into a single family history table.
 
 
 
@@ -1049,7 +1056,7 @@ fam_cols = fam_df.columns
 ```
 
 
-## Save subject characteristics to file
+## Save cleaned subject characteristics to file
 
 With the columns from each data set hand-picked, the appropriate data types selected, and the missingness standardized, we can write the new cleaned dataframes to file.
 

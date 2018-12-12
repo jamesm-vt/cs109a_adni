@@ -1,7 +1,7 @@
 ---
 title: Methods
 notebook: ..\markdown_notebooks\imputation.ipynb
-section: 3
+section: 4
 subsection: 2
 ---
 
@@ -46,18 +46,18 @@ from mlxtend.regressor import StackingCVRegressor
 ```
 
 
-*This notebook uses [StackingCVClassifer][1] and [StackingCVRegressor][2] from the `mlxtend` library. Use the following commands to install `mlxtend` and to update other libs to required (latest) versions.*
+*This notebook uses [StackingCVClassifer][] and [StackingCVRegressor][] from the `mlxtend` library. Use the following commands to install `mlxtend` and to update other libs to required (latest) versions.*
 
-`
-conda config --add channels conda-forge
-conda install -y mlxtend
-conda update -y pandas
-conda update -y numpy
-conda update -y scikit-learn --no-channel-priority
-`
 
-[1]: http://rasbt.github.io/mlxtend/user_guide/classifier/StackingClassifier/
-[2]: http://rasbt.github.io/mlxtend/user_guide/regressor/StackingRegressor/
+`conda config --add channels conda-forge`<br>
+`conda install -y mlxtend`<br>
+`conda update -y pandas`<br>
+`conda update -y numpy`<br>
+`conda update -y scikit-learn --no-channel-priority`<br>
+
+
+[StackingCVClassifer]: http://rasbt.github.io/mlxtend/user_guide/classifier/StackingClassifier/
+[StackingCVRegressor]: http://rasbt.github.io/mlxtend/user_guide/regressor/StackingRegressor/
 
 ## Missing Data
 
@@ -288,14 +288,14 @@ def save_imputation_data(data, imputed_cols, scores, errors, missing_thresh, mod
 To perform the actual imputation, we will iterate over a few different thresholds of missingness. We chose `[1, .5, .3]` based on the distribution of missingness described in the ADNI Merged EDA section. These numbers describe our tolerance for missing values. The number $1$, for example, means we will keep columns with up to $100\%$ missing values. *Technically we need at least 1 non-null value.* The other values, $.5$ and .$3$, mean we will accept columns with up to $50\%$ and $30\%$ missing values respectively.
 
 #### *NOTE: The following code will take several hours to complete*
-With this approach, we end up performing imputation nearly 460 times to account for every categorical and quantitative feature in each missingness threshold. Because we have many different estimators in `StackingCVRegressor` and `StackingCVClassifier` ***and*** we're doing grid-based cross-validation in `utils.impute_values_classification(...)` and `utils.impute_values_regression(...)`, the following code ends up fitting, predicting, and scoring tens of thousands of times.
+With this approach, we end up performing imputation nearly 460 times to account for every categorical and quantitative feature in each missingness threshold. Because we have many different estimators in `StackingCVRegressor` and `StackingCVClassifier` ***and*** we're doing grid-based cross-validation in `[utils.impute_values_classification(...)][1]` and `utils.impute_values_regression(...)`, the following code ends up fitting, predicting, and scoring tens of thousands of times.
 
 #### Leveraging AWS cloud compute resources
-To get the imputation to run in a reasonable amount of time, we used `n_jobs=-1` wherever possible. We also launched an [AWS c5.9xlarge EC2][1] compute intance with $36$ vCPUs to leverage parallelism where possible. We used an [AWS Deep Learning AMI][2] since most of the required libraries came pre-installed. To complete setting up the instance, we made a clone our git repo and installed `mlxtend`. Once the instance was launched and configured, we only needed to [open a tunnel][3] between our local machine and the remote instance and then start the jupyter notebook server on the EC2 instance. Even when utilizing the robust c5.9xlarge compute instance with 36 vCPUs, it still took approximately 12 hours for this code to complete execution.
+To get the imputation to run in a reasonable amount of time, we used `n_jobs=-1` wherever possible. We also launched an [AWS c5.9xlarge EC2][] compute intance with $36$ vCPUs to leverage parallelism where possible. We used an [AWS Deep Learning AMI][] since most of the required libraries came pre-installed. To complete setting up the instance, we made a clone our git repo and installed `mlxtend`. Once the instance was launched and configured, we only needed to [open a tunnel][] between our local machine and the remote instance and then start the jupyter notebook server on the EC2 instance. Even when utilizing the robust c5.9xlarge compute instance with 36 vCPUs, it still took approximately 12 hours for this code to complete execution.
 
-[1]: https://aws.amazon.com/blogs/aws/now-available-compute-intensive-c5-instances-for-amazon-ec2/
-[2]: https://aws.amazon.com/blogs/machine-learning/get-started-with-deep-learning-using-the-aws-deep-learning-ami/
-[3]: https://docs.aws.amazon.com/dlami/latest/devguide/setup-jupyter-configure-client.html
+[AWS c5.9xlarge EC2]: https://aws.amazon.com/blogs/aws/now-available-compute-intensive-c5-instances-for-amazon-ec2/
+[AWS Deep Learning AMI]: https://aws.amazon.com/blogs/machine-learning/get-started-with-deep-learning-using-the-aws-deep-learning-ami/
+[open a tunnel]: https://docs.aws.amazon.com/dlami/latest/devguide/setup-jupyter-configure-client.html
 
 
 
@@ -360,7 +360,7 @@ Even though the number of errors were relatively small, we wanted to keep these 
 thresholds = [1, .5, .3]
 for missing_thresh in thresholds:
 
-    print("Thres")
+    print(f"Threshold {missing_thresh}:")
     # Read in data and identify categorical and non-categorical features
     pre_imputed, categoricals, non_cat = get_combined_data(missing_thresh)
     
@@ -438,6 +438,47 @@ for missing_thresh in thresholds:
     Imputing feature 12 of 13: APGEN2
     Imputing feature 13 of 13: MH15DRUG
     
+
+Now that we've completed the model based imputation for categorical and quantitative features, let's take a look at the scores generated by our Stacking CV estimators.
+
+
+
+```python
+scores = []
+thresh = [100, 50, 30]
+for t in thresh:
+    scores.append(pd.read_csv(f'../data/Imputed/scores_modeled_upto_{t}pct_missing.csv'))
+
+fig, axes = plt.subplots(2, 3, figsize=(18, 10))
+
+for i, ax in enumerate(axes[0].ravel()):
+    reg_scores = scores[i][scores[i].Model.str.contains("StackingCVRegressor")]
+    ax.set_title(f'Missingness Threshold {thresh[i]}%', size=18)
+    ax.hist(reg_scores.Score)
+    ax.set_xlabel('Quantitative Scores\n', size=14)
+    if (i == 0):
+        ax.set_ylabel('Imputed Features', size=16)
+
+for i, ax in enumerate(axes[1].ravel()):
+    reg_scores = scores[i][scores[i].Model.str.contains("StackingCVClassifier")]
+    ax.hist(reg_scores.Score)
+    ax.set_xlabel('Classification Scores', size=14)
+    if (i == 0):
+        ax.set_ylabel('Imputed Features', size=16)
+
+
+fig.tight_layout()
+fig.suptitle("Imputation Scores by Missingness Threshold", size=22, y=1.05)
+plt.show()
+```
+
+
+
+![png](imputation_files/imputation_19_0.png)
+
+
+Looking at our scores, we see that the imputation accuracy ranges from $.6$ to $1$ for categorical features. For quantitative features, we have a few features with a negative $R^2$, although most are in the $.6$ to $1$ range.
+
 
 To understand if our stacking/cv model-based imputation approach was worth the effort, we created mean/mode imputed design matrices at $.5$ and $.3$ thresholds of missingness for comparison.
 

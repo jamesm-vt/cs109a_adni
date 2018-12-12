@@ -9,9 +9,9 @@ medical_history_EDA,2,Medical History,4
 merged_data_eda,2,ADNI Merge,5
 neuropsych_scores_EDA,2,Cognitive Tests,6
 sub_characteristics_EDA,2,Subject Characterestics,7
-rawdata_grouping_EDA,2,Data Aggregation,8
-imputation_overview,3,Imputation,1
-imputation,3,Methods,2
-modeling_overview,4,Modeling,1
-imputed_data_modeling_EDA,4,0,2
-key_findings,5,Key Results,1
+rawdata_grouping_EDA,3,Data Aggregation,1
+imputation_overview,4,Imputation,1
+imputation,4,Methods,2
+modeling_overview,5,Modeling,1
+model_comparison,5,Model Comparison,2
+key_findings,6,Key Results,1
