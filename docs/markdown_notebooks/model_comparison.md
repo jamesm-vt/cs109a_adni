@@ -28,17 +28,19 @@ from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import KFold
+from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import LeaveOneOut
 from sklearn.model_selection import KFold
-from sklearn.linear_model import LogisticRegressionCV
+from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import BaggingClassifier
 from sklearn.preprocessing import scale
+
 
 import statsmodels.api as sm
 from statsmodels.regression.linear_model import OLS
@@ -95,108 +97,120 @@ def reverse_one_hot(resp_set, imp_df):
 
 ```python
 #Initializing the data strucuture that will hold the test scores from different models
-models = ['Logistic', 'kNN', 'Decision Tree', 'Bagging', 'Boosting', 'Random Forest']
-datasets = ['mean - 30pct', 'mean - 50pct', 'model - 30pct', 'model - 50pct', 'model - 100pct']
-result_container_multi = pd.DataFrame(index=datasets, columns=models)
-result_container_binary = pd.DataFrame(index=datasets, columns=models)
+classifiers = {}
+classifiers['LogisticRegression'] = 'Logistic'
+classifiers['KNeighborsClassifier'] = 'kNN'
+classifiers['DecisionTreeClassifier'] = 'Decision Tree'
+classifiers['BaggingClassifier'] = 'Bagging'
+classifiers['AdaBoostClassifier'] = 'Boosting'
+classifiers['RandomForestClassifier'] = 'Random Forest'
 
-filenames = pd.DataFrame(index=datasets, columns=['filename'])
-filenames.at['mean - 30pct','filename'] = 'data_mean_upto_30pct_missing.csv'
-filenames.at['mean - 50pct','filename'] = 'data_mean_upto_50pct_missing.csv'
-filenames.at['model - 30pct','filename'] = 'data_modeled_upto_30pct_missing.csv'
-filenames.at['model - 50pct','filename'] = 'data_modeled_upto_50pct_missing.csv'
-filenames.at['model - 100pct','filename'] = 'data_modeled_upto_100pct_missing.csv'
+filenames = {}
+filenames['mean - 30pct'] = 'data_mean_upto_30pct_missing.csv'
+filenames['mean - 50pct'] = 'data_mean_upto_50pct_missing.csv'
+filenames['model - 30pct'] = 'data_modeled_upto_30pct_missing.csv'
+filenames['model - 50pct'] = 'data_modeled_upto_50pct_missing.csv'
+filenames['model - 100pct'] = 'data_modeled_upto_100pct_missing.csv'
+            
+result_container_multi = pd.DataFrame(index=list(filenames.keys()), columns=list(classifiers.values()))
+result_container_binary = pd.DataFrame(index=list(filenames.keys()), columns=list(classifiers.values()))
+estimators = {f_name:[] for f_name in list(filenames.values())}
 ```
 
 
 
 
 ```python
-#Running the different models and storing results
-
+#Setting up common parameters/config
 import warnings
 warnings.filterwarnings('ignore')
 
-#Setting up common parameters
 data_path = '../data/Imputed/'
 resp_variable = 'DX_FINAL'
 resp_vars = ['DXCOMB', 'DX_CHANGE', 'DX_FINAL', 'DX_BASE', 'DX_bl']
 testsize = 0.2
 rs = 42 # set random state so results are repeatable
 run_binary = 1 #Set this variable to 1 if models with binary response variable are to be run
-
-#Logistic classifier
-for dataset in datasets:
-    #Loading data
-    filename = data_path + filenames.at[dataset, 'filename']
-    print(f'LogisticRegressionCV: fitting {filename}')
-    
-    df = pd.read_csv(filename)
-    if 'model' in dataset:
-        df = reverse_one_hot(resp_vars, df)
-    df_train, df_test = train_test_split(df, test_size=testsize, shuffle=True, random_state=rs)
-
-    y_train_multi = df_train[resp_variable]
-    if (run_binary == 1 and not 'model' in dataset):
-        y_train_bin = df_train[resp_variable].apply(lambda x: 1 if x == 3 else 0)
-    X_train = df_train.drop(resp_vars, axis=1).select_dtypes(['number'])
-
-    y_test_multi = df_test[resp_variable]
-    if (run_binary == 1 and not 'model' in dataset):
-        y_test_bin = df_test[resp_variable].apply(lambda x: 1 if x == 3 else 0)
-    X_test = df_test.drop(resp_vars, axis=1).select_dtypes(['number'])
-    
-    #Running the model and storing results
-    model_multi = LogisticRegressionCV(multi_class="ovr", cv=4, penalty='l2',
-                                       max_iter=1000).fit(X_train, y_train_multi)
-    score = model_multi.score(X_test, y_test_multi)
-    result_container_multi.loc[dataset,'Logistic'] = score
-    
-    if (run_binary == 1 and not 'model' in dataset):
-        model_binary = LogisticRegressionCV(multi_class="ovr", cv=4, penalty='l2').fit(X_train, y_train_bin)
-        result_container_binary.loc[dataset, 'Logistic'] = model_binary.score(X_test, y_test_bin)
 ```
 
-
-    LogisticRegressionCV: fitting ../data/Imputed/data_mean_upto_30pct_missing.csv
-    LogisticRegressionCV: fitting ../data/Imputed/data_mean_upto_50pct_missing.csv
-    LogisticRegressionCV: fitting ../data/Imputed/data_modeled_upto_30pct_missing.csv
-    LogisticRegressionCV: fitting ../data/Imputed/data_modeled_upto_50pct_missing.csv
-    LogisticRegressionCV: fitting ../data/Imputed/data_modeled_upto_100pct_missing.csv
-    
 
 
 
 ```python
-#kNN
-for dataset in datasets:
-    #Loading data
-    filename = data_path + filenames.at[dataset, 'filename']
-    print(f'KNeighborsClassifier: fitting {filename}')
-    
-    df = pd.read_csv(filename)
-    if 'model' in dataset:
-        df = reverse_one_hot(resp_vars, df)
-    df_train, df_test = train_test_split(df, test_size=testsize, shuffle=True, random_state=rs)
+def get_feature_names(design_mat):
+        file_w_path = data_path + design_mat
+        df = pd.read_csv(file_w_path, index_col='RID')
+        if 'modeled' in design_mat:
+            df = reverse_one_hot(resp_vars, df)
+              
+        df = df.drop(resp_vars, axis=1).select_dtypes(['number'])
+        return list(df.columns)
+```
 
-    y_train_multi = df_train[resp_variable]
-    if (run_binary == 1 and not 'model' in dataset):
-        y_train_bin = df_train[resp_variable].apply(lambda x: 1 if x == 3 else 0)
-    X_train = df_train.drop(resp_vars, axis=1).select_dtypes(['number'])
 
-    y_test_multi = df_test[resp_variable]
-    if (run_binary == 1 and not 'model' in dataset):
-        y_test_bin = df_test[resp_variable].apply(lambda x: 1 if x == 3 else 0)
-    X_test = df_test.drop(resp_vars, axis=1).select_dtypes(['number'])
+
+
+```python
+def train_classifier_cv(estimator, param_grid, cv=5):
+    """Trains the given estimator on each design matrix using grid search and
+    corss validation. The best estimator and score are saved.
     
-    #Running the model and storing results
-    model_multi = KNeighborsClassifier(n_neighbors=52).fit(X_train, y_train_multi)
-    score = model_multi.score(X_test, y_test_multi)
-    result_container_multi.loc[dataset,'kNN'] = score
-    
-    if (run_binary == 1 and not 'model' in dataset):
-        model_binary = KNeighborsClassifier(n_neighbors=36).fit(X_train, y_train_bin)
-        result_container_binary.loc[dataset, 'kNN'] = model_binary.score(X_test, y_test_bin)
+    # Argumenrts
+        estimator: The estimator/classifier to train/score
+        param_grid: the parameters to be used in the grid search
+        cv: number of folds to be used for cross validation
+    """
+    for file_key in list(filenames.keys()):
+        #Loading data
+        file_nm = filenames[file_key]
+        file_w_path = data_path + file_nm
+        est_name = estimator.__repr__().split('(')[0]
+        
+        print(f'{est_name}: fitting {file_w_path}')
+
+        df = pd.read_csv(file_w_path, index_col='RID')
+        if 'modeled' in file_nm:
+            df = reverse_one_hot(resp_vars, df)
+              
+        df_train, df_test = train_test_split(df, test_size=testsize, shuffle=True, random_state=rs)
+
+        y_train_multi = df_train[resp_variable]
+        if (run_binary == 1 and not 'modeled' in file_nm):
+            y_train_bin = df_train[resp_variable].apply(lambda x: 1 if x == 3 else 0)
+              
+        X_train = df_train.drop(resp_vars, axis=1).select_dtypes(['number'])
+
+        y_test_multi = df_test[resp_variable]
+        if (run_binary == 1 and not 'modeled' in file_nm):
+            y_test_bin = df_test[resp_variable].apply(lambda x: 1 if x == 3 else 0)
+              
+        X_test = df_test.drop(resp_vars, axis=1).select_dtypes(['number'])
+
+        #Running the model and storing results
+
+        gs = GridSearchCV(estimator, param_grid=param_grid, cv=cv, n_jobs=-1,
+                          return_train_score=True, iid=False)
+        gs.fit(X_train, y_train_multi)
+        score = gs.score(X_test, y_test_multi)
+        result_container_multi.loc[file_key, classifiers[est_name]] = score
+        estimators[file_nm].append((score, gs.best_estimator_))
+
+        if (run_binary == 1 and not 'modeled' in file_nm):
+            gs = GridSearchCV(estimator, param_grid=param_grid, cv=cv, n_jobs=-1,
+                              return_train_score=True, iid=False)
+            gs.fit(X_train, y_train_bin)
+            result_container_binary.loc[file_key, classifiers[est_name]] = gs.score(X_test, y_test_bin)
+```
+
+
+
+
+```python
+# kNN
+knn = KNeighborsClassifier(n_jobs=-1)
+param_grid = {'n_neighbors': [2, 5, 10, 20, 50, 75, 100]}
+
+train_classifier_cv(knn, param_grid)
 ```
 
 
@@ -210,35 +224,30 @@ for dataset in datasets:
 
 
 ```python
-#Decision Tree
-for dataset in datasets:
-    #Loading data
-    filename = data_path + filenames.at[dataset, 'filename']
-    print(f'DecisionTreeClassifier: fitting {filename}')
-    
-    df = pd.read_csv(filename)
-    if 'model' in dataset:
-        df = reverse_one_hot(resp_vars, df)
-    df_train, df_test = train_test_split(df, test_size=testsize, shuffle=True, random_state=rs)
+# LogisticRegression
+logr = LogisticRegression(multi_class="ovr", penalty='l2', max_iter=1000)
+logr_params = {'C':10.0 ** np.arange(-4,4)}
 
-    y_train_multi = df_train[resp_variable]
-    if (run_binary == 1 and not 'model' in dataset):
-        y_train_bin = df_train[resp_variable].apply(lambda x: 1 if x == 3 else 0)
-    X_train = df_train.drop(resp_vars, axis=1).select_dtypes(['number'])
+train_classifier_cv(logr, logr_params)
+```
 
-    y_test_multi = df_test[resp_variable]
-    if (run_binary == 1 and not 'model' in dataset):
-        y_test_bin = df_test[resp_variable].apply(lambda x: 1 if x == 3 else 0)
-    X_test = df_test.drop(resp_vars, axis=1).select_dtypes(['number'])
+
+    LogisticRegression: fitting ../data/Imputed/data_mean_upto_30pct_missing.csv
+    LogisticRegression: fitting ../data/Imputed/data_mean_upto_50pct_missing.csv
+    LogisticRegression: fitting ../data/Imputed/data_modeled_upto_30pct_missing.csv
+    LogisticRegression: fitting ../data/Imputed/data_modeled_upto_50pct_missing.csv
+    LogisticRegression: fitting ../data/Imputed/data_modeled_upto_100pct_missing.csv
     
-    #Running the model and storing results
-    model_multi = DecisionTreeClassifier(max_depth=4).fit(X_train, y_train_multi)
-    score = model_multi.score(X_test, y_test_multi)
-    result_container_multi.loc[dataset,'Decision Tree'] = score
-    
-    if (run_binary == 1 and not 'model' in dataset):
-        model_binary = DecisionTreeClassifier(max_depth=6).fit(X_train, y_train_bin)
-        result_container_binary.loc[dataset, 'Decision Tree'] = model_binary.score(X_test, y_test_bin)
+
+
+
+```python
+# Decision Tree
+dt_clf = DecisionTreeClassifier()
+dt_clf_params = {'max_depth':[2, 3, 5, 10, 20],
+              'min_samples_leaf': [1, 2, 4, 6, 20]}
+
+train_classifier_cv(dt_clf, dt_clf_params)
 ```
 
 
@@ -252,37 +261,13 @@ for dataset in datasets:
 
 
 ```python
-#Bagging
-for dataset in datasets:
-    #Loading data
-    filename = data_path + filenames.at[dataset, 'filename']
-    print(f'BaggingClassifier: fitting {filename}')
-    
-    df = pd.read_csv(filename)
-    if 'model' in dataset:
-        df = reverse_one_hot(resp_vars, df)
-    df_train, df_test = train_test_split(df, test_size=testsize, shuffle=True, random_state=rs)
+# Bagging
+dt_clf = DecisionTreeClassifier()
+bag_clf = BaggingClassifier(dt_clf, n_jobs=-1, n_estimators=100)
+bag_clf_params = {'base_estimator__max_depth':[2, 3, 5, 10, 20],
+          'base_estimator__min_samples_leaf': [1, 2, 4, 6, 20]}
 
-    y_train_multi = df_train[resp_variable]
-    if (run_binary == 1 and not 'model' in dataset):
-        y_train_bin = df_train[resp_variable].apply(lambda x: 1 if x == 3 else 0)
-    X_train = df_train.drop(resp_vars, axis=1).select_dtypes(['number'])
-
-    y_test_multi = df_test[resp_variable]
-    if (run_binary == 1 and not 'model' in dataset):
-        y_test_bin = df_test[resp_variable].apply(lambda x: 1 if x == 3 else 0)
-    X_test = df_test.drop(resp_vars, axis=1).select_dtypes(['number'])
-    
-    #Running the model and storing results
-    model_multi = BaggingClassifier(DecisionTreeClassifier(max_depth=10),
-                                    n_estimators=100).fit(X_train, y_train_multi)
-    score = model_multi.score(X_test, y_test_multi)
-    result_container_multi.loc[dataset,'Bagging'] = score
-    
-    if (run_binary == 1 and not 'model' in dataset):
-        model_binary = BaggingClassifier(DecisionTreeClassifier(max_depth=4),
-                                         n_estimators=10).fit(X_train, y_train_bin)
-        result_container_binary.loc[dataset, 'Bagging'] = model_binary.score(X_test, y_test_bin)
+train_classifier_cv(bag_clf, bag_clf_params)
 ```
 
 
@@ -296,38 +281,13 @@ for dataset in datasets:
 
 
 ```python
-#Boosting
-for dataset in datasets:
-    #Loading data
-    filename = data_path + filenames.at[dataset, 'filename']
-    print(f'AdaBoostClassifier: fitting {filename}')
-    
-    df = pd.read_csv(filename)
-    if 'model' in dataset:
-        df = reverse_one_hot(resp_vars, df)
-    df_train, df_test = train_test_split(df, test_size=testsize, shuffle=True, random_state=rs)
+# Boosting
+dt_clf = DecisionTreeClassifier()
+ada_clf = AdaBoostClassifier(dt_clf, n_estimators=100, learning_rate=0.75)
+ada_clf_params = {'base_estimator__max_depth':[2, 3, 5, 10, 20],
+          'base_estimator__min_samples_leaf': [1, 2, 4, 6, 20]} 
 
-    y_train_multi = df_train[resp_variable]
-    if (run_binary == 1 and not 'model' in dataset):
-        y_train_bin = df_train[resp_variable].apply(lambda x: 1 if x == 3 else 0)
-    X_train = df_train.drop(resp_vars, axis=1).select_dtypes(['number'])
-
-    y_test_multi = df_test[resp_variable]
-    if (run_binary == 1 and not 'model' in dataset):
-        y_test_bin = df_test[resp_variable].apply(lambda x: 1 if x == 3 else 0)
-    X_test = df_test.drop(resp_vars, axis=1).select_dtypes(['number'])
-    
-    #Running the model and storing results
-    model_multi = AdaBoostClassifier(DecisionTreeClassifier(max_depth=10), n_estimators=767,
-                                     learning_rate=0.5).fit(X_train, y_train_multi)
-    
-    score = model_multi.score(X_test, y_test_multi)
-    result_container_multi.loc[dataset,'Boosting'] = score
-    
-    if (run_binary == 1 and not 'model' in dataset):
-        model_binary = AdaBoostClassifier(DecisionTreeClassifier(max_depth=4), n_estimators=749 ,
-                                          learning_rate=0.5).fit(X_train, y_train_bin)
-        result_container_binary.loc[dataset, 'Boosting'] = model_binary.score(X_test, y_test_bin)
+train_classifier_cv(ada_clf, ada_clf_params)
 ```
 
 
@@ -341,35 +301,12 @@ for dataset in datasets:
 
 
 ```python
-#Random Forest
-for dataset in datasets:
-    #Loading data
-    filename = data_path + filenames.at[dataset, 'filename']
-    print(f'RandomForestClassifier: fitting {filename}')
-    
-    df = pd.read_csv(filename)
-    if 'model' in dataset:
-        df = reverse_one_hot(resp_vars, df)
-    df_train, df_test = train_test_split(df, test_size=testsize, shuffle=True, random_state=rs)
+# Random Forest
+rf_clf = RandomForestClassifier(n_estimators=100, n_jobs=-1)
+rf_clf_params = {'max_depth':[2, 3, 5, 10, 20],
+      'min_samples_leaf': [1, 2, 4, 6, 20]}  
 
-    y_train_multi = df_train[resp_variable]
-    if (run_binary == 1 and not 'model' in dataset):
-        y_train_bin = df_train[resp_variable].apply(lambda x: 1 if x == 3 else 0)
-    X_train = df_train.drop(resp_vars, axis=1).select_dtypes(['number'])
-
-    y_test_multi = df_test[resp_variable]
-    if (run_binary == 1 and not 'model' in dataset):
-        y_test_bin = df_test[resp_variable].apply(lambda x: 1 if x == 3 else 0)
-    X_test = df_test.drop(resp_vars, axis=1).select_dtypes(['number'])
-    
-    #Running the model and storing results
-    model_multi = RandomForestClassifier(n_estimators=100, max_depth=4).fit(X_train, y_train_multi)
-    score = model_multi.score(X_test, y_test_multi)
-    result_container_multi.loc[dataset,'Random Forest'] = score
-    
-    if (run_binary == 1 and not 'model' in dataset):
-        model_binary = RandomForestClassifier(n_estimators=50, max_depth=8).fit(X_train, y_train_bin)
-        result_container_binary.loc[dataset, 'Random Forest'] = model_binary.score(X_test, y_test_bin)
+train_classifier_cv(rf_clf, rf_clf_params)
 ```
 
 
@@ -398,7 +335,28 @@ plt.show()
 
 
 
-![png](model_comparison_files/model_comparison_12_0.png)
+![png](model_comparison_files/model_comparison_15_0.png)
+
+
+We will now save the model results to disk for further analysis.
+
+
+
+```python
+# Save the feature importance information from the ensemble classifiers
+model_path = '../data/Models/Feature_Importance/'
+for key in list(estimators.keys()):
+    features = get_feature_names(key)
+    key_sub = key.split('data_')[1].split('pct')[0]
+    for score, model in estimators[key]:
+        model_nm = model.__repr__().split('(')[0]
+        
+        if getattr(model, 'estimators_', False):
+            df = pd.DataFrame(columns=features)
+            for estimator in model.estimators_:
+                df = df.append(pd.Series(estimator.feature_importances_, index=df.columns), ignore_index=True)
+            df.to_csv(model_path + f'{model_nm}_{key_sub}.csv')
+```
 
 
 ## Dimensionality reduction
@@ -439,7 +397,7 @@ ax.set_title('PCA Analysis results', fontsize=14);
 
 
 
-![png](model_comparison_files/model_comparison_14_0.png)
+![png](model_comparison_files/model_comparison_19_0.png)
 
 
 As one can see in the plot above, there is not a strong explanatory power concentration on any principal component. Out of 133 components on the select dataset, more than 80 are needed to achieve 90% variance explanation. The top 20 components explain less than 50% of the variance. It is interesting to notice that, after the 20th and before the 100th component, the blue line is almost "parallel" to the green benchmark line - showing that there is very limited explanatory power concentration.
@@ -532,7 +490,7 @@ plt.show()
 
 
 
-![png](model_comparison_files/model_comparison_23_0.png)
+![png](model_comparison_files/model_comparison_28_0.png)
 
 
 In the kNN models for the multi category response variable, `k=52` appears to be the optimal parameter.
@@ -565,7 +523,7 @@ plt.show()
 
 
 
-![png](model_comparison_files/model_comparison_25_0.png)
+![png](model_comparison_files/model_comparison_30_0.png)
 
 
 In the kNN models for the binary response variable, `k=36` appears to be the optimal parameter.
@@ -599,7 +557,7 @@ plt.show()
 
 
 
-![png](model_comparison_files/model_comparison_28_0.png)
+![png](model_comparison_files/model_comparison_33_0.png)
 
 
 Among the Decision Tree models for the multi category response variable, `max_depth=3` appears to be the optimal parameter.
@@ -632,7 +590,7 @@ plt.show()
 
 
 
-![png](model_comparison_files/model_comparison_30_0.png)
+![png](model_comparison_files/model_comparison_35_0.png)
 
 
 Among the Decision Tree models for the binary response variable, `max_depth=6` appears to be the optimal parameter.
@@ -666,7 +624,7 @@ plt.show()
 
 
 
-![png](model_comparison_files/model_comparison_33_0.png)
+![png](model_comparison_files/model_comparison_38_0.png)
 
 
 
@@ -713,7 +671,7 @@ plt.show()
 
 
 
-![png](model_comparison_files/model_comparison_36_0.png)
+![png](model_comparison_files/model_comparison_41_0.png)
 
 
 Among the Bagging Decision Trees for the binary response variable, `n_estimators=10` seems to be the best hyper parameter choice.
@@ -743,7 +701,7 @@ plt.show()
 
 
 
-![png](model_comparison_files/model_comparison_39_0.png)
+![png](model_comparison_files/model_comparison_44_0.png)
 
 
 
@@ -786,7 +744,7 @@ plt.show()
 
 
 
-![png](model_comparison_files/model_comparison_42_0.png)
+![png](model_comparison_files/model_comparison_47_0.png)
 
 
 
@@ -835,7 +793,7 @@ plt.show()
 
 
 
-![png](model_comparison_files/model_comparison_46_0.png)
+![png](model_comparison_files/model_comparison_51_0.png)
 
 
 Among the Random Forest models for the multi category response variable, `max_depth=4` appears to be the optimal parameter.
@@ -869,7 +827,7 @@ plt.show()
 
 
 
-![png](model_comparison_files/model_comparison_48_0.png)
+![png](model_comparison_files/model_comparison_53_0.png)
 
 
 Among the Random Forest models for the binary response variable, `max_depth=8` appears to be the optimal parameter.
