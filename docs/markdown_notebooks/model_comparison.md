@@ -1,7 +1,9 @@
-title: 
-notebook: 
-section: 
-subsection: 
+---
+title: Model Comparison
+notebook: ..\markdown_notebooks\model_comparison.ipynb
+section: 5
+subsection: 2
+---
 
 ## Contents
 {:.no_toc}
