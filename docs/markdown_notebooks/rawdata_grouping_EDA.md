@@ -1,8 +1,8 @@
 ---
 title: Data Aggregation
 notebook: ..\markdown_notebooks\rawdata_grouping_EDA.ipynb
-section: 2
-subsection: 8
+section: 3
+subsection: 1
 ---
 
 ## Contents
@@ -30,19 +30,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set()
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.decomposition import PCA
-from sklearn.model_selection import train_test_split
-from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import KFold
-from sklearn.metrics import accuracy_score
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import LeaveOneOut
-from sklearn.model_selection import KFold
-
-import statsmodels.api as sm
-from statsmodels.regression.linear_model import OLS
 
 # import custom dependencies
 from ADNI_utilities import define_terms, describe_meta_data, paths_with_ext, append_meta_cols
@@ -88,7 +75,9 @@ apo_dict = pd.read_csv("../data/Biomarker Data/APOERES_DICT.csv")
 
 **Breakdown by VISCODE**
 
-One possibility for aggregating the data is to take the first baseline (code: `bl`) visit for each patient from each data set. We can look at the breakdown of the data by `VISCODE` to see if this approach is viable.
+One possibility for aggregating the data is to take the first baseline (code: `bl`) visit for each patient from each data set. This is an attractive possibility because the merged data table provided by ADNI (adnimerge) has a unique entry per patient per visit code. We can look at the breakdown of the number of observations per patient separated by `VISCODE` to see if this approach is viable.
+
+To start let's define a function to return the number of records for each patient.
 
 
 
@@ -96,30 +85,32 @@ One possibility for aggregating the data is to take the first baseline (code: `b
 # function that returns the number of records per patient from a dataframe
 def patient_num_records(df):
     
-    # get indices grouped by patient
+    # get indices grouped by patient ID (RID)
     n_measurements = df.groupby("RID").apply(lambda x: x.shape[0])
     
     return(n_measurements)
 ```
 
 
+Now we can iterate over each raw data file and look at the distribution of number of records per patient in each `VISCODE`. We'll also display the visit codes in the legend to get a sense of which visit codes are available in each data set. As we will see, some of the files contain too many unique visit codes to display. Because we are really only interested in whether or not the data contains a unique record for each visit code, we will visualize the data as one record per patient and more than one record.
+
 
 
 ```python
 # define group and bins
 grp = "VISCODE2"
-bins = np.arange(1,7,1)
+bins = np.arange(1,4,1)
 nbins = bins.shape[0]-1
 
 # get data paths
 csv_paths = paths_with_ext(directory="../data/Cleaned/")
 
 # configure subplots
-nrows = np.ceil(np.sqrt(len(csv_paths)))
+nrows = 5
 ncols = np.ceil(len(csv_paths)/nrows)
 
 # iterate over dataframes
-plt.figure(figsize=(20,20))
+plt.figure(figsize=(20,28))
 
 for i, path in enumerate(csv_paths):
     
@@ -133,10 +124,16 @@ for i, path in enumerate(csv_paths):
         grp = "VISCODE"
     else:
         grp = False
-        
+    
+    # if the file contains visit code meta data
     if grp:
+        
+        # group data by visit code and count number of records per patient in each
         by_viscode = df.groupby(grp)
         records_per_viscode = by_viscode.apply(patient_num_records)
+        
+        # cap number of records per patient at 2 (for visualization)
+        #records_per_viscode[records_per_viscode>2] = 2
 
         # get viscodes from df
         viscodes = df[grp].dropna().unique()
@@ -146,6 +143,7 @@ for i, path in enumerate(csv_paths):
         tmp_n = np.tile(np.arange(1,nbins+1,1).reshape(-1,1),nv).reshape(-1,nv).flatten()
         tmp_df = pd.DataFrame(data=np.vstack((vc,tmp_n,tmp_counts)).T, columns=[grp,"records","count"])
 
+        # plot the data
         plt.subplot(nrows,ncols,i+1)
         for j,code in enumerate(viscodes):
 
@@ -154,14 +152,14 @@ for i, path in enumerate(csv_paths):
 
         # plot histogram
         sns.barplot(x="records", y="count", hue=grp, data=tmp_df)    
-        plt.xlabel("records per patient")
-        plt.ylabel("count")
-        plt.title("{}".format(os.path.basename(path)))
+        plt.xlabel("records per patient", FontSize=14)
+        plt.ylabel("count", FontSize=14)
+        plt.title("{}".format(os.path.basename(path)), FontSize=14)
 
-        # display legend there are few than 10 unique codes
+        # display legend there are few than 13 unique codes
         if viscodes.shape[0] > 10:
             ax = plt.gca()
-            ax.get_legend().set_visible(False)
+            ax.get_legend().set(Visible=False)
     
     
 plt.subplots_adjust(hspace=0.3)
@@ -169,10 +167,10 @@ plt.subplots_adjust(hspace=0.3)
 
 
 
-![png](rawdata_grouping_EDA_files/rawdata_grouping_EDA_10_0.png)
+![png](rawdata_grouping_EDA_files/rawdata_grouping_EDA_11_0.png)
 
 
-We can see from the plots above that not all data sets will have a `bl` visit or will only be sparsely represented. Additionally, some data sets will have multiple `bl` records for each patient. We will have to use another strategy to aggregate the data.
+We can see from the plots above that not all data sets will have a `bl` visit or will only be sparsely represented. Additionally, some data sets will have multiple `bl` records for each patient. In the interest of completeness, we should consider another strategy to aggregate the data.
 
 **Records per patient**
 
@@ -184,7 +182,7 @@ Plot the distribution of entry number per patient for each dataframe
 
 ```python
 # iterate over dataframes
-plt.figure(figsize=(20,20))
+plt.figure(figsize=(20,28))
 for i, path in enumerate(csv_paths):
     
     # read in current dataframe
@@ -196,16 +194,16 @@ for i, path in enumerate(csv_paths):
     # plot histogram of results
     plt.subplot(nrows,ncols,i+1)
     plt.hist(n)
-    plt.xlabel("records per patient")
-    plt.ylabel("count")
-    plt.title(os.path.basename(path))
+    plt.xlabel("records per patient", FontSize=14)
+    plt.ylabel("count", FontSize=14)
+    plt.title(os.path.basename(path), FontSize=14)
     
 plt.subplots_adjust(hspace=0.3)
 ```
 
 
 
-![png](rawdata_grouping_EDA_files/rawdata_grouping_EDA_15_0.png)
+![png](rawdata_grouping_EDA_files/rawdata_grouping_EDA_16_0.png)
 
 
 As we can see the distribution of number of records per patient varies quite a lot. There are many different approaches we could take to compile a single entry. Simple strategies include:
@@ -214,7 +212,7 @@ As we can see the distribution of number of records per patient varies quite a l
 2. Build the most complete entry for each patient (taking the first non-missing entry for each patient and feature)
 3. Take per patient average for numeric data or per patient mode for categorical data
 
-For data sets with only a single entry per patient, we only have one option: take the first and only record for each patient. We can also see that even in data sets where multiple entries per patient are possible, only a subset of the patients have multiple entries. For those reasons, I prefer approaches that take a single measurement per patient per feature, to make the measurements more comparable across patients. This leaves the first two strategies above.
+For data sets with only a single entry per patient, we only have one option: take the first and only record for each patient. Two of our data sets (ApoE and MHach) fall into this category, but most of our data sets could potentially stand to benefit from a broader approach. We can also see that even in data sets where multiple entries per patient occur, only a small subset of the patients actually have multiple entries. For those reasons, I prefer approaches that take a single measurement per patient per feature, to make the measurements more comparable across patients. This leaves the first two strategies above.
 
 To assess whether the strategy of building a most complete entry is viable, we should see if patients with missing values in the first entry have the values filled in other entries. One way to compare this two approaches is to define functions to build entries both ways and profile missingness in the resulting data set.
 
@@ -267,7 +265,7 @@ nonmissing_dfs = []
 missing_value = -1
 
 # iterate over dataframes
-plt.figure(figsize=(20,20))
+plt.figure(figsize=(20,28))
 for i, path in enumerate(csv_paths):
     
     # read in current dataframe
@@ -286,21 +284,21 @@ for i, path in enumerate(csv_paths):
     plt.subplot(nrows,ncols,i+1)
     plt.bar(np.arange(1,nmiss_first.shape[0]+1,1), nmiss_first.values - nmiss_non.values, color='k')
     plt.ylim(0,plt.ylim()[1])
-    plt.xlabel("feature")
-    plt.ylabel("num fewer missing")
-    plt.title(os.path.basename(path));
+    plt.xlabel("feature", FontSize=14)
+    plt.ylabel("num fewer missing", FontSize=14)
+    plt.title(os.path.basename(path), FontSize=14);
     
-plt.subplots_adjust(hspace=0.3)
+plt.subplots_adjust(hspace=0.5)
 ```
 
 
 
-![png](rawdata_grouping_EDA_files/rawdata_grouping_EDA_20_0.png)
+![png](rawdata_grouping_EDA_files/rawdata_grouping_EDA_21_0.png)
 
 
 In at least one data set (lab data), taking the first non-missing value recovers some additional data for a subset of the features, although it's not a huge effect compared to the number of patients in the data set ($\approx$3000). The penalty we pay for this additional data is that the data is more likely to be from diverse time points throughout the study.
 
-**Final Diagnosis**
+## Final Diagnosis
 
 For the purposes of our analysis, we will likely want to track the change in a patient's diagnosis from the baseline assessment to the final visit. We can use the method described above to take the patient entry at a particular index. This time we'll use `index = -1` to take the last entry for each patient. We'll also return the row index within the dataframe for both the first and the last entry. This will allow us to identify patients with only a single diagnosis (ie. the first and last index are the same). 
 
@@ -346,7 +344,7 @@ first_idx_dfs[dx_df_idx[0]] = first_dx_df
 
 Now we can build per patient datasets by concatenating the dataframes constructed using the methods above. We'll start by combining the data aggregated by the first index method.
 
-**First Entry per Patient**
+### First entry per patient
 
 
 
@@ -806,7 +804,7 @@ patient_first_idx_df.head()
 
 
 
-**First Non-Missing Entry per Patient**
+### First non-missing entry per patient
 
 Now we can do the same for the per patient dataframe assembled with the first non-missing entry method.
 
@@ -1078,7 +1076,7 @@ print(patient_nonmissing_df.columns.unique().shape)
     (193,)
     
 
-## Save per Patient Formatted Data to File
+## Save per patient data to file
 
 With all the formatting and aggregation complete, it's a good idea to write the data to file as a convenient check-point we can revisit later.
 
@@ -1089,286 +1087,3 @@ patient_first_idx_df.to_csv("../data/Per_Patient/patient_firstidx_merge.csv")
 patient_nonmissing_df.to_csv("../data/Per_Patient/patient_nonmissingidx_merge.csv")
 ```
 
-
-**Deal with Missingness**
-
-
-
-
-
-```python
-# throw away any column with only nans
-all_missing_cols = pat_df.columns[np.isnan(pat_df.values).all(0)]
-pat_df = pat_df.drop(columns=all_missing_cols, axis=1)
-
-# throw away any row with nan in dx_comb
-no_dx = pat_df.DXCOMB.isna()
-
-# return df with rows dropped
-pat_df = pat_df.drop(index=pat_df.loc[no_dx].index)
-```
-
-
-
-
-```python
-# compute mean of each numeric column with missing values
-replace_cols = pat_df.drop(columns="RID", axis=1).columns
-col_means = pat_df[replace_cols].apply(np.nanmean)
-is_missing = pat_df[replace_cols].isna().values
-
-#index each column and replace with column mean
-for i,col in enumerate(replace_cols):
-    pat_df.loc[is_missing[:,i],col] = col_means[i]
-```
-
-
-**Modeling**
-
-Let's try to model the data with a decision tree model. We'll start by splitting the data.
-
-
-
-```python
-pat_df["DXCOMB"] = pat_df.DXCOMB.astype(int)
-```
-
-
-
-
-```python
-train_df, test_df = train_test_split(pat_df, test_size=0.2)
-x_train = train_df.drop(columns=["RID","DXCOMB"], axis=1)
-y_train = train_df.DXCOMB
-x_test = test_df.drop(columns=["RID","DXCOMB"], axis=1)
-y_test = test_df.DXCOMB
-```
-
-
-
-
-```python
-#define depths to test
-depths = np.arange(1,pat_df.shape[1],1)
-avg_train_score = np.empty(depths.shape, dtype=float)
-avg_test_score = np.empty(depths.shape, dtype=float)
-
-# fit decision tree at each depth and record accuracy
-for i, depth in enumerate(depths):
-    clf = DecisionTreeClassifier(criterion="gini", max_depth=depth).fit(x_train,y_train)
-    avg_train_score[i] = cross_val_score(clf, x_train, y_train, cv=5).mean()
-    
-plt.plot(depths, avg_train_score, c='b', lw=2, label="train")
-ax = plt.gca()
-ax.set_xlabel("tree depth")
-ax.set_ylabel("mean CV score")
-ax.legend()
-ax.set_title("decision tree performance by depth");
-
-# train clf at best depth and report accuracy
-best_depth = depths[np.argmax(avg_train_score)]
-best_clf = DecisionTreeClassifier(criterion="gini", max_depth=best_depth).fit(x_train,y_train)
-print("Max Train Score at depth = %i" % best_depth)
-print("mean accuracy (test): {0:.3f}".format(cross_val_score(best_clf, x_test, y_test, cv=10).mean()))
-
-```
-
-
-    Max Train Score at depth = 5
-    mean accuracy (test): 0.864
-    
-
-
-![png](rawdata_grouping_EDA_files/rawdata_grouping_EDA_49_1.png)
-
-
-
-
-```python
-tree = DecisionTreeClassifier(criterion="gini", max_depth=3).fit(x_train,y_train)
-print("mean accuracy (train): {0:.3f}".format(cross_val_score(tree, x_train, y_train, cv=10).mean()))
-print("mean accuracy (train): {0:.3f}".format(cross_val_score(tree, x_test, y_test, cv=10).mean()))
-```
-
-
-    mean accuracy (train): 0.858
-    mean accuracy (train): 0.882
-    
-
-
-
-```python
-# lets compare it to a bad model
-np.histogram(pat_df.DXCOMB.values, bins=[1,2,3,4])[0]/pat_df.shape[0]
-```
-
-
-
-
-
-    array([0.40015911, 0.4363564 , 0.16348449])
-
-
-
-
-
-```python
-# This code is adapted from
-# http://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html
-def show_tree_structure(clf):
-    tree = clf.tree_
-
-    n_nodes = tree.node_count
-    children_left = tree.children_left
-    children_right = tree.children_right
-    feature = tree.feature
-    threshold = tree.threshold
-
-    # The tree structure can be traversed to compute various properties such
-    # as the depth of each node and whether or not it is a leaf.
-    node_depth = np.zeros(shape=n_nodes, dtype=np.int64)
-    is_leaves = np.zeros(shape=n_nodes, dtype=bool)
-    stack = [(0, -1)]  # seed is the root node id and its parent depth
-    while len(stack) > 0:
-        node_id, parent_depth = stack.pop()
-        node_depth[node_id] = parent_depth + 1
-
-        # If we have a test node
-        if (children_left[node_id] != children_right[node_id]):
-            stack.append((children_left[node_id], parent_depth + 1))
-            stack.append((children_right[node_id], parent_depth + 1))
-        else:
-            is_leaves[node_id] = True
-
-    print(f"The binary tree structure has {n_nodes} nodes:\n")
-    
-    for i in range(n_nodes):
-        indent = node_depth[i] * "  "
-        if is_leaves[i]:
-            prediction = clf.classes_[np.argmax(tree.value[i])]
-            print(f"{indent}node {i}: predict class {prediction}")
-        else:
-            print("{}node {}: if X[:, {}] <= {:.3f} then go to node {}, else go to node {}".format(
-                indent, i, feature[i], threshold[i], children_left[i], children_right[i]))
-```
-
-
-
-
-```python
-show_tree_structure(best_clf)
-```
-
-
-    The binary tree structure has 31 nodes:
-    
-    node 0: if X[:, 9] <= 0.992 then go to node 1, else go to node 30
-      node 1: if X[:, 0] <= 157.000 then go to node 2, else go to node 17
-        node 2: if X[:, 62] <= 74.950 then go to node 3, else go to node 10
-          node 3: if X[:, 23] <= 65.250 then go to node 4, else go to node 7
-            node 4: if X[:, 50] <= 158.500 then go to node 5, else go to node 6
-              node 5: predict class 1
-              node 6: predict class 1
-            node 7: if X[:, 48] <= 61.000 then go to node 8, else go to node 9
-              node 8: predict class 1
-              node 9: predict class 3
-          node 10: if X[:, 23] <= 62.150 then go to node 11, else go to node 14
-            node 11: if X[:, 43] <= 37.500 then go to node 12, else go to node 13
-              node 12: predict class 3
-              node 13: predict class 3
-            node 14: if X[:, 51] <= 10.700 then go to node 15, else go to node 16
-              node 15: predict class 3
-              node 16: predict class 1
-        node 17: if X[:, 16] <= 0.004 then go to node 18, else go to node 23
-          node 18: if X[:, 12] <= 1.037 then go to node 19, else go to node 20
-            node 19: predict class 2
-            node 20: if X[:, 63] <= 1.021 then go to node 21, else go to node 22
-              node 21: predict class 1
-              node 22: predict class 1
-          node 23: if X[:, 2] <= 3.733 then go to node 24, else go to node 27
-            node 24: if X[:, 48] <= 36.000 then go to node 25, else go to node 26
-              node 25: predict class 3
-              node 26: predict class 1
-            node 27: if X[:, 0] <= 201.500 then go to node 28, else go to node 29
-              node 28: predict class 3
-              node 29: predict class 1
-      node 30: predict class 2
-    
-
-
-
-```python
-# print columns in order of importance
-splits = [9,0,16,62,23,12,48,43,41]
-x_train.columns[splits]
-```
-
-
-
-
-
-    Index(['DXMPTR1', 'ABETA', 'DXPARK', 'TAU', 'HMT15', 'DXMPTR4', 'RCT14',
-           'PTAU', 'HMT96'],
-          dtype='object')
-
-
-
-According to this model, the best predictor is a self-reported memory complaint. 
-
-**PCA**
-
-Let's try some dimensionality reduction with PCA.
-
-
-
-```python
-# first scale the data from range 0-1
-scaler = MinMaxScaler()
-scaler = scaler.fit(x_train)
-scaled_train = scaler.transform(x_train)
-scaled_test = scaler.transform(x_test)
-```
-
-
-
-
-```python
-# perform PCA on scaled data and store in new df
-pca = PCA(n_components=x_train.shape[1])
-pca.fit(scaled_train)
-
-# transform data and store in new dataframe
-columns = ['pc_%i' % i for i in range(x_train.shape[1])]
-df_pca = pd.DataFrame(pca.transform(scaled_train), columns=columns, index=train_df.index)
-
-# get design matrices for train and test
-pca_x_train = df_pca.values
-pca_x_test = pca.transform(scaled_test)
-
-# store response var
-df_pca["DX"] = y_train
-```
-
-
-
-
-```python
-plt.figure(figsize=(10,10))
-ax=sns.scatterplot(x="pc_0", y="pc_1", hue="DX", data=df_pca, s=30)
-```
-
-
-
-![png](rawdata_grouping_EDA_files/rawdata_grouping_EDA_59_0.png)
-
-
-
-
-```python
-best_clf = DecisionTreeClassifier(criterion="gini", max_depth=2).fit(pca_x_train,y_train)
-print("mean accuracy (test): {0:.3f}".format(cross_val_score(best_clf, pca_x_test, y_test, cv=10).mean()))
-```
-
-
-    mean accuracy (test): 0.722
-    

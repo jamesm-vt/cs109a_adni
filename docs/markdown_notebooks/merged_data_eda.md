@@ -11,6 +11,8 @@ subsection: 5
 {: toc}
 
 
+The purpose of this notebook is to explore/clean the ADNI Merged dataset to see how it may be used in building design matrices.
+
 
 
 ```python
@@ -33,10 +35,16 @@ HTML(styles)
 
 
 
-## ADNI
+## ADNI Data
+Before looking at a single observation or feature, there is a lot of information we can glean from reviewing ADNI metadata. There are over 250 datasets in the ADNI data inventory spanning the 4 study phases (ADNI 1, GO, 2, 3) - and this number does not include the archives. These studies are longitudinal. ADNI-1 started in 2004 and ADNI-3 continues today. Although there is potentially a wealth of information, insights, and predictive power in these data, their data collection methods and longitudinal nature present many challenges.
 
-The overarching goal of the Alzheimer's Disease Neuroimaging Initiative (ADNI) is to identify biomarkers of Alzheimer’s disease. Specifically the study aims at identifying those biomarkers that can be used in the earliest (pre-dementia) prediction of Alzheimer's Disease (AD). The study began in 2004, a time when biomarkers for Alzheimer’s disease which could be used for diagnostics in pre-dementia individuals were virtually unknown. There are four categories of biomarkers in the scope of the initiative: (clinical, imaging, genetic, and biochemical).
+One challenge is that all biometrics within the scope of the study are not collected across all study phases. Also, within each phase, not all participants had all measurements taken. For example, in ADNI-1, $100\%$ of the cohort had a 1.5 Tesla (1.5T) MRI, $50\%$ had a PET scan. Of the $50\%$ that didn't have a PET scan, $25\%$ had a 3T MRI. Finally, only $20\%$ of the ADNI-1 cohort had a lumbar puncture (L.P.) to collect cerebral spinal fluid (CSF).
 
+Other data challenges are related to the longitudinal nature of the studies across the different phases. In each successive phase of the study, participants were rolled over from previous phases while new participants were also added - *(cohort details can be seen in the table above)*. However, existing participants in the study must provide their consent to be included in each subsequent phase. Furthermore, an obvious, but nonetheless real, complication with this population is that a participant could be removed from the study at any time due to significant deterioration in health or death. 
+
+The result is that each phase of the study produces a richer set of longitudinal data than the previous study because of the rollover participants. The downside of this design is the inherent introduction of missingness into the data due to the recently joined participants.
+
+### ADNI Phases
 There have been ADNI 4 study phases to date with the following goals:
 
 <!-- Begin ADNI Phase table -->
@@ -50,17 +58,8 @@ There have been ADNI 4 study phases to date with the following goals:
 
 <!-- End ADNI phase table -->
 
-## ADNI Data
-Before looking at a single observation or feature, there is a lot of information we can glean from reviewing ADNI metadata. There are over 250 datasets in the ADNI data inventory spanning the 4 study phases (ADNI 1, GO, 2, 3) - and this number does not include the archives. These studies are longitudinal. ADNI-1 started in 2004 and ADNI-3 continues today. Although there is potentially a wealth of information, insights, and predictive power in these data, their data collection methods and longitudinal nature present many challenges.
-
-One challenge is that all biometrics within the scope of the study are not collected across all study phases. Also, within each phase, not all participants had all measurements taken. For example, in ADNI-1, $100\%$ of the cohort had a 1.5 Tesla (1.5T) MRI, $50\%$ had a PET scan. Of the $50\%$ that didn't have a PET scan, $25\%$ had a 3T MRI. Finally, only $20\%$ of the ADNI-1 cohort had a lumbar puncture (L.P.) to collect cerebral spinal fluid (CSF).
-
-Other data challenges are related to the longitudinal nature of the studies across the different phases. In each successive phase of the study, participants were rolled over from previous phases while new participants were also added - *(cohort details can be seen in the table above)*. However, existing participants in the study must provide their consent to be included in each subsequent phase. Furthermore, an obvious, but nonetheless real, complication with this population is that a participant could be removed from the study at any time due to significant deterioration in health or death. 
-
-The result is that each phase of the study produces a richer set of longitudinal data than the previous study because of the rollover participants. The downside of this design is the inherent introduction of missingness into the data due to the recently joined participants.
-
 ### An initial look at the data.
-Given the breadth of available data and the challenges mentioned above, deciding what data to use to start EDA is a non-trivial task. Fortunately, there is a combined dataset available consisting of key ADNI tables merged into a single table based on the patient identifier or `RID`. As is common with most ADNI datasets, each observation represents a single visit for a participant. This means that a single participant (`RID`) may appear multiple times in the dataset. The number of occurrences will generally depend on what phase the participant entered the study.
+Given the breadth of available data and the challenges mentioned above, deciding where to invest EDA effort is an important consideration. Fortunately, ADNI provides a combined dataset consisting of key ADNI tables merged into a single table based on the patient identifier or `RID`. As is common with most ADNI datasets, each observation represents a single visit for a participant. This means that a single participant (`RID`) may appear multiple times in the dataset. The number of occurrences will generally depend on what phase the participant entered the study.
 
 Let's take an initial look at the merged dataset.
 
@@ -1005,7 +1004,7 @@ bl_corr_df
 
 
 
-These features indeed contain duplicate information so we can drop one of each pair.
+As we can see from the table above, there is perfect correlation between the baseline and non-baseline versions of these fields. Since these pairs of features indeed contain duplicate information, we can drop one of each pair.
 
 
 
@@ -1141,7 +1140,7 @@ bl_dupes
 
 
 
-All of the pairs are nearly exact duplicates except `DX`|`DX_bl`, so we can drop one of the duplicate columns. The baseline versions have slightly more missing data, so we'll drop those. Then we'll take a look at `DX` vs.`DX_bl`.
+All of the pairs are nearly exact duplicates except `DX` and `DX_bl`, so we can drop one of the duplicate columns. The baseline versions have slightly more missing data, so we'll drop those. Then we'll take a look at `DX` vs.`DX_bl`.
 
 
 
@@ -1607,6 +1606,7 @@ baseline['PTEDUCAT'] = baseline.PTEDUCAT.astype('float')
 ```
 
 
+## Combining ADNI Merged and Per-Patient data
 There are additional (potentially valuable) data that are not included in the Merged data set. These data have been cleaned and put into a format such that we can join them to the merged data set. We will merge the additional per-patient data with the ADNI Merged data. First we set the index to `RID`.
 
 

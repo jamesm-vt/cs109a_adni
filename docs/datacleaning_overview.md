@@ -43,11 +43,13 @@ ADNI offers 244 data sets to date (Figure 1). The genetic and neuroimaging data 
 6. Append patient ID (RID) and visit code (VISCODE) meta data to the selected features.
 7. Save the cleaned data to a CSV file.
 
-
-{:.center}
-<figure class="image">
-    <img src="/cs109a_adni/data_summary_files/data_files_table.png" alt="" class="image">
-    <figcaption style="text-align: left">
-        Figure 2. ADNI contains longitudinal data collected over multiple phases across many patient visits.
+<figure class="center_fig">
+    <img src="/cs109a_adni/data_summary_files/data_files_table.png" class="image" style="width: 90%; margin-top: 20px">
+    <figcaption class="center_cap">
+        Table 1. Raw contents of the ADNI database.
     </figcaption>
 </figure>
+
+Many of the specific decisions made in hand-selecting features are not essential to understand the imputation and modeling results but are provided for detailed descriptions of how the eventual feature set was chosen. Of particular note is the  **data aggregation** method used to convert a variety of raw data tables in longitudinal format into a single per patient data set.
+
+<div style="margin-top: 100px"></div>

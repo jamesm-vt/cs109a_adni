@@ -23,7 +23,7 @@ To assess whether we can expect model-based imputation to add signal to the data
 
 {:.center}
 <figure class="center_fig">
-    <img src="/cs109a_adni/imputation_overview_files/corrcoef_hist.svg" class="image">
+    <img src="/cs109a_adni/imputation_overview_files/corrcoef_hist.svg" class="image" style="width: 100%">
     <figcaption class="center_cap">
         Figure 1. The features of the per patient data set are slightly more correlated to one another than expected by random chance.
     </figcaption>
@@ -39,3 +39,5 @@ To positively bias our method toward signal present in the unimputed data, we ra
 4. Repeat steps 1-3 until no features with missingness remain.
 
 With these design choices in place, the base model to use is the most important remaining choice. The choice of model is non-trivial and is considered in detail in the following notebook.
+
+<div style="margin-top: 100px"></div>

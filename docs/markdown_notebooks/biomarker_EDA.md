@@ -11,7 +11,15 @@ subsection: 2
 {: toc}
 
 
-Import libraries
+The purpose of this notebook is to explore, filter, and clean the raw biomarker data available on the ADNI database. ADNI contains a diverse set of biomarker data. From this broader data, we focused on three biomarker data sets:
+
+- Apolipoprotein E (ApoE) patient genotypes
+- Protein measurements from patient cerebrospinal fluid (CSF)
+- Chemical screenings of patient blood and urine
+
+**Import Dependencies**
+
+Before getting started, lets import our python dependencies and the data files of interest.
 
 
 
@@ -23,9 +31,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set()
-
-import statsmodels.api as sm
-from statsmodels.regression.linear_model import OLS
 
 # import custom dependencies
 import sys
@@ -39,7 +44,7 @@ Initialize data structures
 
 
 ```python
-# import adni dictionary
+# import adni dictionary for defining terms
 apo_dict = pd.read_csv("../data/Biomarker Data/APOERES_DICT.csv")
 
 # import data set specific dictionaries
@@ -59,11 +64,11 @@ lab_df =  pd.read_csv("../data/Biomarker Data/LABDATA.csv")
 ```
 
 
-<div style="background-color:lightgrey">
-  <h3>ApoE Measurements</h3>
-</div>
+## ApoE Genotypes
 
-The APOERES table contains information about patient alleles for the ApoE gene which has been linked to alzheimers.
+The APOERES table contains information about patient alleles for the ApoE gene which has been linked to alzheimers. More specifically, ApoE is thought to promote proteolytic degredation of amyloid-beta. Build up of amyloid-beta is thought to be part of the pathogenesis of Alzheimer's Disease. The prevalance of Alzheimer's disease is much higher in patients with a copy of E4 allele of ApoE and is higher still in patients with two copies of E4.
+
+Let's start by characterizing some general features of the data.
 
 
 
@@ -82,7 +87,7 @@ describe_meta_data(apo_df)
     Patients w/ Duplicates: 0
     
 
-Looks like there is a single entry for each patient with a single phase spanned. We can take a look at the features to see what we might be interested in.
+It looks like there is a single entry for each patient with over ADNI1, ADNIGO, and ADNI2, which should cover most of the patients in the study. With a total patient count of 2,067, nearly every patient in the study shoudl have measurement. We can take a look at the features to see what we might be interested in.
 
 
 
@@ -266,6 +271,62 @@ apo_cols = ["APGEN1","APGEN2"]
 ```
 
 
+The alleles should be categorical variables (i.e. `int64`). We can see from the term codes that these should take integer values from 2-4, corresponding to the ApoE alleles E2, E3, and E4. 
+
+
+
+```python
+apo_df[apo_cols].apply(lambda x: x.unique())
+```
+
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>APGEN1</th>
+      <th>APGEN2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>3</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>4</td>
+      <td>2</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
 
 
 ```python
@@ -283,13 +344,16 @@ apo_df[apo_cols].dtypes
 
 
 
-## Biomarker Master Data
+We can see from the above list of unique values that we have genotype information for both alleles for every patient in the data set.
 
-UPENN Biomarker master table contains abeta, tau, and ptau measurements taken from patient CSF. We can repeat the same process above for this table.
+## Cerebrospinal Fluid Measurements
+
+UPENN Biomarker master table contains Amyloid-beta, Tau, and pTau protein measurements taken from patient CSF. Higher levels of these proteins in the CSF have all previously been linked to higher incidence of Alzheimer's disease. We can repeat the same process above for this table.
 
 
 
 ```python
+# describe the meta data
 describe_meta_data(csf_df)
 ```
 
@@ -302,6 +366,8 @@ describe_meta_data(csf_df)
     Phases spanned per patient: 0-0
     Patients w/ Duplicates: 1249
     
+
+The summary description above shows that we likely have anywhere from 2-26 records per patient, suggesting that these protein levels were periodically measured throughout the study.
 
 
 
@@ -459,13 +525,23 @@ term_defs
 
 
 
-There is no phase information in this table. Looks like we won't be able to group the data by phase. Taking a quick glance at the features, the most interesting ones look like the re-scaled measurement of ABETA, TAU, and PTAU.
+There is no phase information in this table. Looks like we won't be able to group the data by phase. Taking a quick glance at the features, the most interesting ones look like the re-scaled measurement of `ABETA`, `TAU`, and `PTAU`. The protocols for these measurements changed between ADNI phases, meaning that the re-scaled measurement is what we will want to keep if we want to make comparisons across phases.
 
 
 
 ```python
 # record columns for later use
 csf_cols = ["ABETA","TAU","PTAU"]
+```
+
+
+ADNI uses 3 different missing value indicators: `-1`, `-4`, and `NaN`. We will want to ensure that all missing values values are marked with a single indicator: `-1`. If we want to store our categorical variables as `int` data type, we cannot use `NaN` as our indicator since it can only be specified for `float` data types.
+
+
+
+```python
+# ensure standardized missing value is compatible with int
+csf_df.replace({np.nan:-1, -4:-1}, inplace=True)
 ```
 
 
@@ -489,7 +565,7 @@ csf_df[csf_cols].dtypes
 
 ## Laboratory Chemical Screenings
 
-The lab master data set contains lab results from a variety of chemical tests performed on patient blood and urine.
+The lab master data set contains lab results from a variety of chemical tests performed on patient blood and urine. This is a very large and diverse data set that is likely to be loaded with predictors that we have no prior expectation should be strongly linked to Alzheimer's Disease.
 
 
 
@@ -631,7 +707,7 @@ lab_codes.head(10)
 
 
 
-Since we have no apriori hypothesis about which of these lab measurements might be more interesting than others, let's keep measurements from all the tests.
+From the short list above we can see that the lab results contain diverse analysis of the patient blood and urine, including hormone levels, protein measurements, blood sugar, and the presence of vitamins and minerals. Since we have no apriori hypothesis about which of these lab measurements might be more interesting than others, let's keep measurements from all the tests.
 
 
 
@@ -708,7 +784,7 @@ lab_df[lab_cols].dtypes.unique()
 
 
 
-## Save the data to file
+## Save cleaned biomarker data to file
 
 Before moving on to additional analysis, we can save the dataframes with the missing values updated and the columns restricted to our columns of interest.
 

@@ -11,9 +11,11 @@ subsection: 3
 {: toc}
 
 
-(Zach Werkhoven)
+The goal of this notebook is to explore, filter, and clean diagnostic data from the ADNI database. Of particular interest in this data set are our response variables relating to patient diagnoses for Alzheimer's Disease. In addition to diagnoses for Alzheimer's Disease, the data contains other patient diagnoses such complaints of memory impairment, Parkinson's Disease and other forms of dementia.
 
-## Import dependencies
+Let's start by importing our python dependencies.
+
+**Import dependencies**
 
 
 
@@ -24,9 +26,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set()
-
-import statsmodels.api as sm
-from statsmodels.regression.linear_model import OLS
 %matplotlib inline
 
 # import custom dependencies
@@ -42,7 +41,7 @@ ADNI uses diagnostic codes to define patient dianosis for alzheimer's disease at
 - Mild Cognitive Impairment or `MCI` or `2`
 - Alzheimer's Disease or `AD` or `3`
 
-However, some ADNI phases record additional diagnoses (eg. `LMCI` and `EMCI` for early and late mild cognitive impairment) and others only record change in diagnoses relative to the last visit. The purpose of this EDA is to try methods for constructing a single response variable with the format above for each visit. 
+However, some ADNI phases record additional diagnoses (eg. `LMCI` and `EMCI` for early and late mild cognitive impairment) and others only record change in diagnoses relative to the last visit. One goal of this EDA is to try methods for constructing a single response variable with the format above for each visit. 
 
 
 
@@ -486,13 +485,14 @@ dx_terms
 
 
 
-We can see from the summary above that there are many diagnostic summaries which take the form of comments on or are conditional on previous categories. These will have to be removed.
+We can see from the summary above that there are many diagnostic summaries which take the form of comments on or are conditional on previous categories. These will have to be removed. Apart from Alzheimer's Disease diagnosis, we will also keep diagnostic information about depression, Parkinson's Disease, dementia, and self-reported or other reported complaints of memory loss.
 
 
 
 ```python
 # specify non alzheimer's diagnosis columns that may be of interest
-dx_cols = ["DXNORM","DXNODEP","DXMPTR1","DXMPTR2","DXMPTR3","DXMPTR4","DXMPTR5","DXPARK","DXDEP","DXOTHDEM"]
+dx_cols = ["DXNORM","DXNODEP","DXMPTR1","DXMPTR2","DXMPTR3",\
+           "DXMPTR4","DXMPTR5","DXPARK","DXDEP","DXOTHDEM"]
 ```
 
 
@@ -524,7 +524,7 @@ print(dx_terms.loc[dx_terms.FLDNAME=="DIAGNOSIS"].CODE.values)
     ["1=Cognitively Normal; 5=Significant Memory Concern;2=Early MCI; 3=Late MCI; 4=Alzheimer's Disease"]
     
 
-By combining information from the metrics above, we should be able to to get a measure for each patient that falls into one of the three categories defined earlier: `NL`, `MCI`, and `AD`.
+Because ADNI 1 did not record subcategorizations of MCI, we cannot retrieve that information from the data. But we can collapse information from the other phases into a smaller number of measures. By combining information from the metrics above, we should be able to to get a measure of the lowest common denominator for each patient that falls into one of the three categories defined earlier: `NL`, `MCI`, and `AD`. It is also worth noting that category 5 from `DIAGNOSIS` (Significant Memory Concern) corresponds to patients with a self-reported memory complaint but were not clinically diagnosed with any cognitive impairment. For that reason, we classify these patients as `NL`.
 
 Let's see which metrics were recorded during each ADNI phase.
 
@@ -794,7 +794,7 @@ dx_df[dx_cols] = dx_df[dx_cols].astype(int)
 ```
 
 
-## Output data to file
+## Save diagnostic data to file
 
 With the columns selected and the response variable constructed, we can output the data to file for later use.
 

@@ -11,7 +11,13 @@ subsection: 6
 {: toc}
 
 
-The purpose of this notebook is to explore and clean select data from the neuropsychological examinations available in ADNI.
+The purpose of this notebook is to explore and clean select data from the neuropsychological examinations available in ADNI. These data files include a variety of psychological tests meant to assess patient emotional and cognitive state. As we will see below, these tests are designed to produce a single summary score of:
+
+- Depression
+- Awareness
+- Vascular Dementia (such as stroke)
+
+Let's start by importing our python dependencies.
 
 **Import libraries**
 
@@ -26,9 +32,6 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set()
-
-import statsmodels.api as sm
-from statsmodels.regression.linear_model import OLS
 
 # import custom dependencies
 from ADNI_utilities import define_terms, describe_meta_data, paths_with_ext, append_meta_cols
@@ -341,7 +344,7 @@ gds_dict
 
 
 
-Most of the features here are raw data answers to the questions. Well just take the `GDTOTAL` score for future use.
+Most of the features here are raw data answers to the questions. Well just take the `GDTOTAL` score for future use, since the rest of the features fall under the categories of meta data or features described by or in duplicate with other features.
 
 
 
@@ -356,6 +359,8 @@ gds_df[gds_cols] = gds_df[gds_cols].astype(float)
 
 
 ## Mini-Mental State Exam
+
+The mini-mental state exam probes a patient's overall awareness and memory.
 
 
 
@@ -909,6 +914,8 @@ mmse_df[mmse_cols] = mmse_df[mmse_cols].astype(float)
 
 ## Modified Hachinski Ischemia Scale
 
+The Hachinski Ischemia Scale is a questionnaire designed to assist in the diagnosis of patients with or at high risk of vascular dementia.
+
 
 
 ```python
@@ -1108,7 +1115,7 @@ mhach_dict
 
 
 
-Most of the features here are raw data answers to the questions. Again we'll just save the total score `HMSCORE`.
+Most of the features here are raw data answers to the questions. Again we'll just save the total score `HMSCORE` since it contains (in part) the information of the other questions on the test.
 
 
 
@@ -1122,7 +1129,7 @@ mhach_df[mhach_cols] = mhach_df[mhach_cols].astype(float)
 ```
 
 
-## Saving Data to File
+## Save cleaned neuropsychological test scores to file
 
 With the columns from each data set hand-picked, the appropriate data types selected, and the missingness standardized, we can write the new cleaned dataframes to file.
 
