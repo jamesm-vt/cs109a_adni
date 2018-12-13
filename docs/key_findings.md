@@ -135,6 +135,10 @@ We found that neither imputation method or missingness threshold had a significa
     </figcaption>
 </figure>
 
+##### Collaborators:
+
+James May, Shirsti Pandey, Guilherme Ude Braz, Zach Werkhoven
+
 #### References: 
 
 1. Battista, P., Salvatore, C., & Castiglioni, I. (2017). Optimizing Neuropsychological Assessments for Cognitive, Behavioral, and Functional Impairment Classification: A Machine Learning Study. Behavioural neurology, 2017, 1850909.
