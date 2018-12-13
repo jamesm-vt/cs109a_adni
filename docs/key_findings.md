@@ -135,7 +135,7 @@ We found that neither imputation method or missingness threshold had a significa
     </figcaption>
 </figure>
 
-##### Collaborators:
+#### Collaborators:
 
 James May, Shirsti Pandey, Guilherme Ude Braz, Zach Werkhoven
 
