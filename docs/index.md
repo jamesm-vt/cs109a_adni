@@ -22,7 +22,7 @@ A 2015 report by the World Health Origanization (WHO) estimated 29.8 million peo
 Since the onset of the study in 2004, the purpose of ADNI has provided a standard framework and set of experimental protocols for researchers at separate institutions to study ALzheimer's under collective guidelines. The ADNI data set appears in the analyses of more than 1000 publications. As such, other studies have well-characterized many of the key biological correlates of Alzheimer's Disease. We therefore took a more wholistic approach, attempting characterize the complete data set with an additional emphasis on lesser-known or weaker predictors of the disease.
 
 <figure class="center_fig">
-    <img src="/cs109a_adni/index_files/global_cause_of_death.jpg" class="image" style="width: 100%">
+    <img src="/cs109a_adni/index_files/global_cause_of_death.jpg" class="image" style="width: 75%">
     <figcaption class="center_cap" style="text-align: center">
         Figure 1. Alzheimer's Disease is a leading cause of death in the world.
     </figcaption>
