@@ -24,13 +24,15 @@ In addition to the most used ensemble methods, we have decided also to test some
     </figcaption>
 </figure>
 
+
+
 It is easy to check that "non-ensemble" methods did perform worse than the ensemble methods - as expected. Among the different ensemble methods, Bagging (using Decision Trees) showed stronger results than Boosting and Random Forests. It is also interesting to notice that the combination of Bagging and model-based imputation has proven to be the best combination to accurately predict Alzheimer's Disease on our patient base.
 More details about the deployment of each model can be found on the "Model Comparison" subsection.
 
 ## Selected Model:
 
 <figure class="center_fig">
-    <img src="/cs109a_adni/docs/data_summary_files/FeatureImportance_top80Features.svg" class="image">
+    <img src="/cs109a_adni/data_summary_files/FeatureImportance_top80Features.svg" class="image">
     <figcaption class="center_cap" style="text-align: center">
         Figure 2. Top Features arranged by Feature Importance as assigned by Random Forest.
     </figcaption>
@@ -109,6 +111,13 @@ We found that neither imputation method or missingness threshold had a significa
     </figcaption>
 </figure>
 
+
+<figure class="center_fig">
+    <img src="/cs109a_adni/data_summary_files/missingness_Vs_Importance.svg" class="image">
+    <figcaption class="center_cap" style="text-align: center">
+        Figure 4. Percentage of data imputed among our top 80 common features across three ensemble models.
+    </figcaption>
+</figure>
 
 ### References: 
 
