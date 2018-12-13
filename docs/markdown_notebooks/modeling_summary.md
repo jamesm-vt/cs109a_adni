@@ -37,7 +37,7 @@ We have run those classifiers in 5 different datasets:
 The accuracy of each model on the test sets of each dataset is summarized on the table below:
 
 <figure class="center_fig">
-    <img src="/cs109a_adni/data_summary_files/modelheatmap.png" class="image">
+    <img src="/cs109a_adni/data_summary_files/modelheatmap.png" style="width: 80%" class="image">
     <figcaption class="center_cap" style="text-align: center">
         Figure 1. Model comparison summary.
     </figcaption>
