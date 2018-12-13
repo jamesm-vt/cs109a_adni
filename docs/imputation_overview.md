@@ -21,7 +21,6 @@ A quick look at the data showed that too many values were missing for the first 
 
 To assess whether we can expect model-based imputation to add signal to the data, we can characterize the prevalence of multi-colinearity in the data. A simple way of characterizing multi-colinearity in a holistic was is to compute the correlation matrix for the data set and visualize the distribution of correlation coefficients (Figure 1). To serve as a baseline for comparison, we can generate a null-model data set of the same size from randomly distributed data. Visualizing the data this way, we can see that our data is slightly more distributed around zero (no correlation) than the random data. There is some hope that model imputation may add some limited signal to the data. We ultimately decided to proceed with model-based imputation using mean/mode imputation as a basis for comparison.
 
-{:.center}
 <figure class="center_fig">
     <img src="/cs109a_adni/imputation_overview_files/corrcoef_hist.svg" class="image" style="width: 100%">
     <figcaption class="center_cap">

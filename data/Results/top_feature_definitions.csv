@@ -1,0 +1,81 @@
+,FLDNAME,FEATURE_IMPORTANCE,TEXT,CRFNAME
+0,CDRSB,0.07553548893855452,CDR-SB,Key variables merged into one data table
+1,mPACCdigit,0.05955847299314713,ADNI modified Preclinical Alzheimer's Cognitive Composite (PACC) with Digit Symbol Substitution,Key variables merged into one data table
+2,LDELTOTAL,0.05236776206785928,Logical Memory - Delayed Recall,Key variables merged into one data table
+3,mPACCtrailsB,0.049832108453352425,ADNI modified Preclinical Alzheimer's Cognitive Composite (PACC) with Trails B,Key variables merged into one data table
+4,FAQ,0.04001678487955976,FAQ,Key variables merged into one data table
+5,MOCA,0.02454211791623274,MOCA,Key variables merged into one data table
+6,EcogSPTotal,0.024168712806513955,SP ECog - Total,Key variables merged into one data table
+7,ADASQ4,0.023870359650634172,ADAS Delayed Word Recall,Key variables merged into one data table
+8,ADAS13,0.02296188777201459,ADAS 13,Key variables merged into one data table
+9,FDG,0.022922776317046676,"Average FDG-PET of angular, temporal, and posterior cingulate",Key variables merged into one data table
+10,EcogSPMem,0.0223113354845028,SP ECog - Mem,Key variables merged into one data table
+11,AV45,0.02088253140131405,Reference region - florbetapir mean of whole cerebellum.  Regions defined by Freesurfer; see Jagust lab PDF on LONI for details,Key variables merged into one data table
+12,ABETA,0.020470099126367897,CSF ABETA,Key variables merged into one data table
+13,RAVLT_immediate,0.01995149184402033,RAVLT Immediate (sum of 5 trials),Key variables merged into one data table
+14,Hippocampus,0.015370217572634742,UCSF Hippocampus,Key variables merged into one data table
+15,ADAS11,0.013745059856113384,ADAS 11,Key variables merged into one data table
+16,MMSE,0.013677934702130731,MMSE,Key variables merged into one data table
+17,RAVLT_perc_forgetting,0.013278054773342162,RAVLT Percent Forgetting,Key variables merged into one data table
+18,MMSCORE,0.011901065541299433,MMSE TOTAL SCORE,Mini Mental State Exam
+19,EcogSPLang,0.0118834996209451,SP ECog - Lang,Key variables merged into one data table
+20,EcogSPOrgan,0.011199336752044896,SP ECog - Organ,Key variables merged into one data table
+21,EcogPtTotal,0.01094407276896868,Pt ECog - Total,Key variables merged into one data table
+22,EcogPtMem,0.010600370694751697,Pt ECog - Mem,Key variables merged into one data table
+23,MidTemp,0.010519238399783385,UCSF Med Temp,Key variables merged into one data table
+24,PTAU,0.00913255682617126,CSF PTAU,Key variables merged into one data table
+25,EcogSPPlan,0.009111431264998013,SP ECog - Plan,Key variables merged into one data table
+26,TAU,0.008352620125896899,CSF TAU,Key variables merged into one data table
+27,Fusiform,0.008202113051711075,UCSF Fusiform,Key variables merged into one data table
+28,Entorhinal,0.007759191905258398,UCSF Entorhinal,Key variables merged into one data table
+29,HMT9,0.0077444588703210445,Test HMT9; Lymphocytes,Laboratory Data
+30,EcogSPDivatt,0.007708333818717518,SP ECog - Div atten,Key variables merged into one data table
+31,HMT16,0.007556802886363762,Test HMT16; Lymphocytes (%),Laboratory Data
+32,TRABSCOR,0.007466778693408168,Trails B,Key variables merged into one data table
+33,HMT18,0.007285509068253739,Test HMT18; Eosinophils (%),Laboratory Data
+34,HMT17,0.006952472371830724,Test HMT17; Monocytes (%),Laboratory Data
+35,ICV,0.00685092722424039,UCSF ICV,Key variables merged into one data table
+36,HMT15,0.006836309698489964,Test HMT15; Neutrophils (%),Laboratory Data
+37,WholeBrain,0.006768986750315988,UCSF WholeBrain,Key variables merged into one data table
+38,HMT8,0.006691662547122827,Test HMT8; Neutrophils,Laboratory Data
+39,HMT4,0.006591068315678135,Test HMT4; MCV,Laboratory Data
+40,RAVLT_learning,0.006468423738571232,RAVLT Learning (trial 5 - trial 1),Key variables merged into one data table
+41,BAT126,0.006243934224999598,Test BAT126; Vitamin B12,Laboratory Data
+42,Ventricles,0.006131408104280355,UCSF Ventricles,Key variables merged into one data table
+43,HMT7,0.006114857672919956,Test HMT7; WBC,Laboratory Data
+44,HMT19,0.006035689961602944,Test HMT19; Basophils (%),Laboratory Data
+45,PTDOBYY,0.005966154254889297,2b. Participant Year of Birth,Participant Demographics
+46,HMT11,0.005949612646584881,Test HMT11; Eosinophils,Laboratory Data
+47,AGE,0.005878511859728617,Age,Key variables merged into one data table
+48,RCT8,0.0058618838919255135,Test RCT8; Serum Uric Acid,Laboratory Data
+49,RCT1407,0.005753398999913184,Test RCT1407; Alkaline Phosphatase,Laboratory Data
+50,RCT1408,0.005688865275050985,Test RCT1408; LDH,Laboratory Data
+51,RCT19,0.005673664137770969,Test RCT19; Triglycerides (GPO),Laboratory Data
+52,HMT40,0.0056542039418747345,Test HMT40; Hemoglobin,Laboratory Data
+53,HMT13,0.005576040645325259,Test HMT13; Platelets,Laboratory Data
+54,HMT10,0.0055530901705169965,Test HMT10; Monocytes,Laboratory Data
+55,RCT11,0.00544375212070882,Test RCT11; Serum Glucose,Laboratory Data
+56,RCT5,0.0054169411973066395,Test RCT5; AST (SGOT),Laboratory Data
+57,EcogPtLang,0.005395758689922988,Pt ECog - Lang,Key variables merged into one data table
+58,RCT183,0.005093700062936697,Test RCT183; Calcium (EDTA),Laboratory Data
+59,RCT20,0.005086980175764287,Test RCT20; Cholesterol (High Performance),Laboratory Data
+60,HMT2,0.005050231192036883,Test HMT2; Hematocrit,Laboratory Data
+61,RCT1,0.0050363949417316775,Test RCT1; Total Bilirubin,Laboratory Data
+62,RCT13,0.0050131804490694395,Test RCT13; Albumin,Laboratory Data
+63,RCT14,0.0049396340425402994,Test RCT14; Creatine Kinase,Laboratory Data
+64,RCT4,0.004928909652305523,Test RCT4; ALT (SGPT),Laboratory Data
+65,RCT3,0.004912043475897366,Test RCT3; GGT,Laboratory Data
+66,EcogPtOrgan,0.0049043903249209545,Pt ECog - Organ,Key variables merged into one data table
+67,HMT3,0.004824124005763528,Test HMT3; RBC,Laboratory Data
+68,RCT392,0.004757639172001584,Test RCT392; Creatinine (Rate Blanked),Laboratory Data
+69,RCT12,0.004603301185247773,Test RCT12; Total Protein,Laboratory Data
+70,RCT9,0.004522861304660447,Test RCT9; Phosphorus,Laboratory Data
+71,HMT12,0.004491695272482316,Test HMT12; Basophils,Laboratory Data
+72,RCT6,0.004475269385837464,Test RCT6; Urea Nitrogen,Laboratory Data
+73,EcogPtDivatt,0.004402857839585722,Pt ECog - Div atten,Key variables merged into one data table
+74,GDTOTAL,0.0038873425162416157,Total Score,Geriatric Depression Scale
+75,PTEDUCAT,0.003593170875296467,Education,Key variables merged into one data table
+76,RAVLT_forgetting,0.0034298718934679616,RAVLT Forgetting (trial 5 - delayed),Key variables merged into one data table
+77,FSVERSION_Cross-Sectional FreeSurfer (FreeSurfer Version 4.3),0.0029873784080512167,,
+78,RCT29,0.0026791697084779763,Test RCT29; Direct Bilirubin,Laboratory Data
+79,MH16SMOK_1.0,0.0010323304544713008,,
