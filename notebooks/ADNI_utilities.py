@@ -41,10 +41,11 @@ def define_terms(data_df, dict_df, table_name=None, columns=None):
         columns = data_df.columns
 
     # remove TBLNAME from the query if no table name is provided
+    keys = ["FLDNAME", "TYPE", "TBLNAME", "TEXT", "CRFNAME", "CODE", "Test Code", "Test Description"]
+    keys = list(set(dict_df.columns.tolist()) & set(keys))
     if table_name is None:
-        keys = ["FLDNAME", "TYPE", "TEXT", "CODE"]
-    else:
-        keys = ["FLDNAME", "TYPE", "TBLNAME", "TEXT", "CODE"]
+        keys = list(set(keys) - set(["TBLNAME"]))
+        
 
     # iterate of features and extract definitions and term codes 
     term_dicts = []
