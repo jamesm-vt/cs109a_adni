@@ -11,14 +11,14 @@ To summarize key predictors and findings of the project.
 
 ## Summary of Results
 
-<iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTiVdZaslqLlstuGXWtYX052rQRkclstZCyBB3tOKuiAb7CL3MY7KaeU8p9Hs3nxUFJ4mFzmJA0WA59/pubhtml?gid=1571893128&amp;single=true&amp;widget=true&amp;headers=false" style="width: 100%"></iframe>
+<iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTiVdZaslqLlstuGXWtYX052rQRkclstZCyBB3tOKuiAb7CL3MY7KaeU8p9Hs3nxUFJ4mFzmJA0WA59/pubhtml?gid=1571893128&amp;single=true&amp;widget=true&amp;headers=false" style="width: 100%; height=50%"></iframe>
 
 ## Summary of Model Comparison: 
 
 In addition to the most used ensemble methods, we have decided also to test some traditional classification algorithms to check if the more complex ensemble methods actually improved accuracy. We have ran those methods in 5 datasets built with different imputation strategies. The accuracy of each model on the test sets of each dataset is summarized on the table below:
 
 <figure class="center_fig">
-    <img src="/cs109a_adni/data_summary_files/modelheatmap.png" class="image">
+    <img src="/cs109a_adni/data_summary_files/modelheatmap.png" style="width: 80%" class="image">
     <figcaption class="center_cap" style="text-align: center">
         Figure 1. Model comparison summary.
     </figcaption>
