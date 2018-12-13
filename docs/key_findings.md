@@ -125,5 +125,3 @@ We found that neither imputation method or missingness threshold had a significa
 11. Refsum, H. & Smith, A. D. Low vitamin B-12 status in confirmed Alzheimer's disease as revealed by serum holotranscobalamin. J Neurol Neurosurg Psychiatry 74, 959-961 (2003).
 
 12. Stuerenburg, H. J., Mueller-Thomsen, T. & Methner, A. Vitamin B 12 plasma concentrations in Alzheimer disease. Neuro Endocrinol Lett 25, 176-177 (2004).
-
-

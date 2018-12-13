@@ -45,10 +45,11 @@ def define_terms(data_df, dict_df, table_name=None, columns=None):
         columns = data_df.columns
 
     # remove TBLNAME from the query if no table name is provided
+    keys = ["FLDNAME", "TYPE", "TBLNAME", "TEXT", "CRFNAME", "CODE", "Test Code", "Test Description"]
+    keys = list(set(dict_df.columns.tolist()) & set(keys))
     if table_name is None:
-        keys = ["FLDNAME", "TYPE", "TEXT", "CODE"]
-    else:
-        keys = ["FLDNAME", "TYPE", "TBLNAME", "TEXT", "CODE"]
+        keys = list(set(keys) - set(["TBLNAME"]))
+        
 
     # iterate of features and extract definitions and term codes 
     term_dicts = []
@@ -557,6 +558,7 @@ def get_feature_names(data_path, design_mat, resp_vars):
     
     if 'baseline' in design_mat:
         dummies = ['PTETHCAT', 'PTGENDER', 'PTRACCAT', 'PTMARRY', 'FSVERSION', 'APOE4']
+        df = df.drop(columns=['CDRSB','mPACCtrailsB', 'mPACCdigit'])
         df = df.drop(columns=['DX_bl'], axis=1)
         df = pd.get_dummies(df, columns=dummies)
         return list(df.columns)
@@ -626,6 +628,7 @@ def get_ADNI_baseline_data(bl_file_path):
     dummies = ['PTETHCAT', 'PTGENDER', 'PTRACCAT', 'PTMARRY', 'FSVERSION', 'APOE4']
     df = pd.get_dummies(df, columns=dummies)
     X = df.drop(['DX_bl'], axis=1)
+    X = X.drop(columns=['CDRSB','mPACCtrailsB', 'mPACCdigit'])
     y = df['DX_bl']
     return X, y
 
@@ -640,6 +643,7 @@ def get_ADNI_baseline(estimators):
         dummies = ['PTETHCAT', 'PTGENDER', 'PTRACCAT', 'PTMARRY', 'FSVERSION', 'APOE4']
         df = pd.get_dummies(df, columns=dummies)
         X = df.drop(['DX_bl'], axis=1)
+        X = X.drop(columns=['CDRSB','mPACCtrailsB', 'mPACCdigit'])
         y = df['DX_bl']
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, shuffle=True, random_state=42)
