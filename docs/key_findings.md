@@ -19,7 +19,7 @@ In addition to the most used ensemble methods, we have decided also to test some
 <figure class="center_fig">
     <img src="/cs109a_adni/figures/modelheatmap.png" class="image">
     <figcaption class="center_cap" style="text-align: center">
-        Figure 1. Alzheimer's Disease is a leading cause of death in the world.
+        Figure 1. Model comparison summary.
     </figcaption>
 </figure>
 
