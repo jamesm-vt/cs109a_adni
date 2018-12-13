@@ -9,15 +9,7 @@ subsection: 1
 
 To summarize key predictors and findings of the project.
 
-## Summary of Results
-
-<div style="margin-top: 30px"></div>
-
-<iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTiVdZaslqLlstuGXWtYX052rQRkclstZCyBB3tOKuiAb7CL3MY7KaeU8p9Hs3nxUFJ4mFzmJA0WA59/pubhtml?gid=1571893128&amp;single=true&amp;widget=true&amp;headers=false" style="width: 100%; height: 600px"></iframe>
-
-<div style="margin-top: 30px"></div>
-
-## Summary of Model Comparison:
+## Model Comparison:
 
 In addition to the most used ensemble methods, we have decided also to test some traditional classification algorithms to check if the more complex ensemble methods actually improved accuracy. We have ran those methods in 5 datasets built with different imputation strategies. The accuracy of each model on the test sets of each dataset is summarized on the table below:
 
@@ -44,9 +36,17 @@ More details about the deployment of each model can be found on the "Model Compa
 
 ## Most important features identified by our model:
 
-The ensemble classification methods used by our group have identified features provided by ADNI that are capable of predicting AD. Among these are many cognitive tests and clinical test results that are well documented on the literature and support doctors diagnosing the disease. Many cognitive tests showed up as the most important predictors, a finding that is consistent to studies like (5).
+The ensemble classification methods used by our group have identified features provided by ADNI that are capable of predicting AD (Table 1). Among these are many cognitive tests and clinical test results that are well documented on the literature and support doctors diagnosing the disease. Many cognitive tests showed up as the most important predictors, a finding that is consistent to studies like (5).
 
 In this section, we will present the key features that were selected by our models and that are consistent with findings reported on published literature regarding Alzheimer’s Disease.
+
+<div style="margin-top: 30px"></div>
+
+<iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTiVdZaslqLlstuGXWtYX052rQRkclstZCyBB3tOKuiAb7CL3MY7KaeU8p9Hs3nxUFJ4mFzmJA0WA59/pubhtml?gid=1571893128&amp;single=true&amp;widget=true&amp;headers=false" style="width: 100%; height: 600px"></iframe>
+    <figcaption class="center_cap" style="text-align: center">
+        Top 80 features identified by all ensemble methods, ordered by Random Forest feature importance.
+    </figcaption>
+<div style="margin-top: 30px"></div>
 
 #### Logical Memory Delayed Recall (LDELTOTAL)
 
