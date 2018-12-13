@@ -44,7 +44,10 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import BaggingClassifier
 from sklearn.preprocessing import scale
-
+from sklearn.model_selection import learning_curve
+from glob import glob
+from sklearn import preprocessing
+from matplotlib_venn import venn3
 
 import statsmodels.api as sm
 from statsmodels.regression.linear_model import OLS
@@ -118,10 +121,10 @@ def train_classifier_cv(estimator, param_grid, cv=5):
         file_nm = filenames[file_key]
         file_w_path = data_path + file_nm
         est_name = estimator.__repr__().split('(')[0]
-        
-        print(f'{est_name}: fitting {file_w_path}')
 
         df = pd.read_csv(file_w_path, index_col='RID')
+        df = df.drop(columns=['CDRSB','mPACCtrailsB', 'mPACCdigit'])
+        
         if 'modeled' in file_nm:
             df = utils.reverse_one_hot(resp_vars, df)
               
@@ -166,13 +169,6 @@ train_classifier_cv(knn, param_grid)
 ```
 
 
-    KNeighborsClassifier: fitting ../data/Imputed/data_mean_upto_30pct_missing.csv
-    KNeighborsClassifier: fitting ../data/Imputed/data_mean_upto_50pct_missing.csv
-    KNeighborsClassifier: fitting ../data/Imputed/data_modeled_upto_30pct_missing.csv
-    KNeighborsClassifier: fitting ../data/Imputed/data_modeled_upto_50pct_missing.csv
-    KNeighborsClassifier: fitting ../data/Imputed/data_modeled_upto_100pct_missing.csv
-    
-
 
 
 ```python
@@ -183,13 +179,6 @@ logr_params = {'C':10.0 ** np.arange(-4,4)}
 train_classifier_cv(logr, logr_params)
 ```
 
-
-    LogisticRegression: fitting ../data/Imputed/data_mean_upto_30pct_missing.csv
-    LogisticRegression: fitting ../data/Imputed/data_mean_upto_50pct_missing.csv
-    LogisticRegression: fitting ../data/Imputed/data_modeled_upto_30pct_missing.csv
-    LogisticRegression: fitting ../data/Imputed/data_modeled_upto_50pct_missing.csv
-    LogisticRegression: fitting ../data/Imputed/data_modeled_upto_100pct_missing.csv
-    
 
 
 
@@ -202,13 +191,6 @@ dt_clf_params = {'max_depth':[2, 3, 5, 10, 20],
 train_classifier_cv(dt_clf, dt_clf_params)
 ```
 
-
-    DecisionTreeClassifier: fitting ../data/Imputed/data_mean_upto_30pct_missing.csv
-    DecisionTreeClassifier: fitting ../data/Imputed/data_mean_upto_50pct_missing.csv
-    DecisionTreeClassifier: fitting ../data/Imputed/data_modeled_upto_30pct_missing.csv
-    DecisionTreeClassifier: fitting ../data/Imputed/data_modeled_upto_50pct_missing.csv
-    DecisionTreeClassifier: fitting ../data/Imputed/data_modeled_upto_100pct_missing.csv
-    
 
 
 
@@ -223,13 +205,6 @@ train_classifier_cv(bag_clf, bag_clf_params)
 ```
 
 
-    BaggingClassifier: fitting ../data/Imputed/data_mean_upto_30pct_missing.csv
-    BaggingClassifier: fitting ../data/Imputed/data_mean_upto_50pct_missing.csv
-    BaggingClassifier: fitting ../data/Imputed/data_modeled_upto_30pct_missing.csv
-    BaggingClassifier: fitting ../data/Imputed/data_modeled_upto_50pct_missing.csv
-    BaggingClassifier: fitting ../data/Imputed/data_modeled_upto_100pct_missing.csv
-    
-
 
 
 ```python
@@ -243,13 +218,6 @@ train_classifier_cv(ada_clf, ada_clf_params)
 ```
 
 
-    AdaBoostClassifier: fitting ../data/Imputed/data_mean_upto_30pct_missing.csv
-    AdaBoostClassifier: fitting ../data/Imputed/data_mean_upto_50pct_missing.csv
-    AdaBoostClassifier: fitting ../data/Imputed/data_modeled_upto_30pct_missing.csv
-    AdaBoostClassifier: fitting ../data/Imputed/data_modeled_upto_50pct_missing.csv
-    AdaBoostClassifier: fitting ../data/Imputed/data_modeled_upto_100pct_missing.csv
-    
-
 
 
 ```python
@@ -262,14 +230,7 @@ train_classifier_cv(rf_clf, rf_clf_params)
 ```
 
 
-    RandomForestClassifier: fitting ../data/Imputed/data_mean_upto_30pct_missing.csv
-    RandomForestClassifier: fitting ../data/Imputed/data_mean_upto_50pct_missing.csv
-    RandomForestClassifier: fitting ../data/Imputed/data_modeled_upto_30pct_missing.csv
-    RandomForestClassifier: fitting ../data/Imputed/data_modeled_upto_50pct_missing.csv
-    RandomForestClassifier: fitting ../data/Imputed/data_modeled_upto_100pct_missing.csv
-    
-
-## Perfomance comparison
+## Performance comparison
 
 This section will present the performance differences across the models tested by our group.
 
@@ -293,6 +254,57 @@ The heatmap above represents a brief summary of our findings. It shows test scor
 
 Among the methods using decision trees, Bagging shows the greatest performance - achieving more than 80% accuracy regardless of the imputation strategy. Especially for Bagging, modeling seems like a better imputation strategy than using the mean of the initial values found on the data. Although this conclusion is not true with all models, it seems generally that on our problem, model-based imputation slightly improves model performance vs using the mean/mode imputation.
 
+To further evaluate the our design matrices, we will also train the top two estimators on the baseline ADNI Merge dataset.
+
+
+
+```python
+# Try Bagging on the baseline set
+estimators = utils.get_ADNI_baseline(estimators)
+```
+
+
+
+
+```python
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+models = estimators['baseline_mean_upto_50pct_missing.csv']
+models = [model[1] for model in models]
+for ax, model in zip(axes, models):
+    X, y = utils.get_ADNI_baseline_data('../data/Imputed/baseline_mean_upto_50pct_missing.csv')
+    train_sizes, train_scores, test_scores = learning_curve(
+    model, X, y, cv=5, n_jobs=-1)
+    train_scores_mn = np.mean(train_scores, axis=1)
+    train_scores_std = np.std(train_scores, axis=1)
+    test_scores_mn = np.mean(test_scores, axis=1)
+    test_scores_std = np.std(test_scores, axis=1)
+
+
+    ax.fill_between(train_sizes, train_scores_mn - train_scores_std,
+                     train_scores_mn + train_scores_std, alpha=0.1,
+                     color="r")
+    ax.fill_between(train_sizes, test_scores_mn - test_scores_std,
+                     test_scores_mn + test_scores_std, alpha=0.1, color="g")
+    ax.plot(train_sizes, train_scores_mn, 'o-', color="r",
+             label="Training score")
+    ax.plot(train_sizes, test_scores_mn, 'o-', color="g",
+             label="Cross-validation score")
+
+
+    ax.set_title(model.__repr__().split('(')[0], size=15)
+    ax.set_xlabel("Training samples", size=14)
+    ax.set_ylabel("Scores", size=14)
+    ax.legend(fontsize=14)
+
+fig.suptitle('Train/Test scores on ANDI Merged baseline data', size=18, y=1.02)
+plt.show()
+```
+
+
+
+![png](model_comparison_files/model_comparison_18_0.png)
+
+
 We will now save the model results to disk for further analysis.
 
 
@@ -304,10 +316,14 @@ from joblib import dump, load
 model_path = '../data/Models/Feature_Importance/'
 for key in list(estimators.keys()):
     features = utils.get_feature_names(data_path, key, resp_vars)
-    key_sub = key.split('data_')[1].split('pct')[0]
+    key_sub = key[key.index('_')+1:].split('pct')[0]
+    bl = ''
+    if 'baseline' in key:
+        bl = 'baseline_'
+        
     for score, model in estimators[key]:
         model_nm = model.__repr__().split('(')[0]
-        dump(model, f'../data/Models/{model_nm}_{key_sub}.joblib') 
+        dump(model, f'../data/Models/{model_nm}_{bl}{key_sub}.joblib') 
         
         # Check to see if estimators_ attribute exists (ensemble classifiers)
         if getattr(model, 'estimators_', None) is not None:
@@ -315,18 +331,105 @@ for key in list(estimators.keys()):
             for estimator in model.estimators_:
                 df = df.append(pd.Series(estimator.feature_importances_, index=df.columns),
                                ignore_index=True)
-            df.to_csv(model_path + f'{model_nm}_{key_sub}.csv')
+            df.to_csv(model_path + f'{model_nm}_{bl}{key_sub}.csv')
             
         # Check to see if coef_ attribute exists
         elif getattr(model, 'coef_', None) is not None:
             df = pd.DataFrame(data=model.coef_, columns=features, index=model.classes_)
-            #df = df.append(pd.Series(model.coef_, index=df.columns), ignore_index=True)
-            df.to_csv(model_path + f'{model_nm}_{key_sub}.csv')
+            df.to_csv(model_path + f'{model_nm}_{bl}{key_sub}.csv')
             
 ```
 
 
-Next we will explore the decision boundaries of each model.
+Next we will explore the distribution of feature importance across the different models.
+
+
+
+```python
+fig, axes = plt.subplots(3, 2, figsize=(12,10))
+
+feature_import = glob('../data/Models/Feature_Importance/*baseline_mean_upto_50.csv') + glob(
+    '../data/Models/Feature_Importance/*_modeled_upto_50.csv')
+    
+for fi, ax in zip(feature_import, axes.ravel()):
+    df = pd.read_csv(fi, index_col=0)
+    x = np.arange(1, df.shape[1]+1)
+    
+    bl = ''
+    if 'baseline' in fi:
+        bl = ' (ADNI Merged)'
+    title = fi.split('/')[-1].split('_')[0] + bl
+    ax.set_xlabel('Features', size=14)
+    ax.set_ylabel('Feature Importance', size=14)
+    ax.set_title(title, size=16)
+    
+    for i in df.index:
+        ax.scatter(x, np.abs(df.loc[i]))
+        
+fig.tight_layout()
+fig.suptitle("Feature Importance of different models", size=20, y=1.03)
+plt.show()
+```
+
+
+
+![png](model_comparison_files/model_comparison_22_0.png)
+
+
+From the charts above, we see that Bagging ensemble methods tend to smooth out and only keep the most significant predictors. Boosting tends to be sensitive to the most predictors, however its score doesn't quite match Bagging or RandomForest. RandomForest is in between in terms of feature importance, but the score is similar to Bagging. LogisticRegression gives `num categories *` feature-importance scores for each feature, which makes it a little harder to interpret. We didn't include KNN because the performance was so poor, and there's no easy way to get those metrics for KNN.
+
+
+
+
+```python
+# Re-index based on feature importance Hi-Lo from Bagging results
+bag_df = pd.read_csv(
+    '../data/Models/Feature_Importance/BaggingClassifier_modeled_upto_50.csv',
+    index_col=0)
+
+idx = bag_df.mean().sort_values(ascending=False).index
+scaler = MinMaxScaler()
+
+# Read in feature importance matrices that were previously saved
+feature_import = glob('../data/Models/Feature_Importance/*_modeled_upto_50.csv')
+
+fig, ax = plt.subplots(1, 1, figsize=(10,6))
+legend = []
+
+for fi in feature_import:
+    df = pd.read_csv(fi, index_col=0)
+    
+    estimator = fi.split('/')[-1].split('_')[0]
+    # Re-index based on feature importance
+    df = df.reindex_axis(idx, axis=1)
+    
+    if estimator == 'LogisticRegression':
+        df = scaler.fit_transform(df.abs())
+    else:
+        df = pd.DataFrame(df.abs())
+
+    df = df.mean()    
+    legend.append(estimator)
+
+    ax.plot(df, lw=3, alpha=.7)
+        
+ax.set_xlabel('Features', size=14)
+ax.set_ylabel('Feature Importance', size=14)
+ax.legend(legend, fontsize=14)  
+ax.set_xticklabels('')
+ax.set_xticks([])
+fig.tight_layout()
+fig.suptitle("Comparison of Feature Importance across models", size=20, y=1.05)
+plt.show()
+
+```
+
+
+
+![png](model_comparison_files/model_comparison_24_0.png)
+
+
+The plot above shows averaged feature importance scores of each classifier together. For easier comparison, the features have been ordered by importance (descending) based on the results from the BaggingClassifier. You can see that the BaggingClassifier puts higher importance on fewer features relative to the other classifiers.
 
 ## Dimensionality reduction
 
@@ -345,10 +448,6 @@ y_train_multi = df_train[resp_variable]
 X_train = df_train.drop(resp_vars, axis=1).select_dtypes(['number'])
 X_train = scale(X_train)
 
-#y_test_multi = df_test[resp_variable]
-#X_test = df_test.drop(resp_vars, axis=1).select_dtypes(['number'])
-#X_test = scale(X_test)
-
 #Running the PCA routine
 pca = PCA()
 pca.fit(X_train)
@@ -366,65 +465,26 @@ ax.set_title('PCA Analysis results', fontsize=14);
 
 
 
-![png](model_comparison_files/model_comparison_19_0.png)
+![png](model_comparison_files/model_comparison_27_0.png)
 
 
 As one can see in the plot above, there is not a strong explanatory power concentration on any principal component. Out of 133 components on the select dataset, more than 80 are needed to achieve 90% variance explanation. The top 20 components explain less than 50% of the variance. It is interesting to notice that, after the 20th and before the 100th component, the blue line is almost "parallel" to the green benchmark line - showing that there is very limited explanatory power concentration.
 
 For this reason, added to the fact that similar results hold for all imputation strategies, we have decided not to use PCA as a tool to further improve our models.
 
+## Comparison of the top features from each model 
 
+What is the consensus between what the different models call the most important features of the dataset?
 
-```python
-fig, axes = plt.subplots(2, 2, figsize=(12,10))
-
-from glob import glob
-feature_import = glob('../data/Models/Feature_Importance/*_modeled_upto_50.csv')
-    
-for fi, ax in zip(feature_import, axes.ravel()):
-    df = pd.read_csv(fi, index_col=0)
-    x = np.arange(1, df.shape[1]+1)
-    
-    title = fi.split('/')[-1].split('_')[0]
-    ax.set_xlabel('Features', size=14)
-    ax.set_ylabel('Feature Importance', size=14)
-    ax.set_title(title, size=16)
-    
-    for i in df.index:
-        ax.scatter(x, np.abs(df.loc[i]))
-        
-fig.tight_layout()
-fig.suptitle("Feature Importance of different models", size=20, y=1.05)
-plt.show()
-```
-
-
-
-![png](model_comparison_files/model_comparison_21_0.png)
-
+To answer this question, we will look at the top 100 important features of every model and plot overlaps between these important features. 
 
 
 
 ```python
-df.reindex_axis(df.mean().sort_values().index, axis=1)
-fig, axes = plt.subplots(1, 1, figsize=(8,8))
-
-from glob import glob
-feature_import = glob('../data/Models/Feature_Importance/*_modeled_upto_50.csv')
-    
-for fi, ax in zip(feature_import, axes.ravel()):
-    df = pd.read_csv(fi, index_col=0)
-    x = np.arange(1, df.shape[1]+1)
-    
-    ax.set_xlabel('Features', size=14)
-    ax.set_ylabel('Feature Importance', size=14)
-    ax.set_title(fi.split('/')[-1].split('_')[0], size=16)
-    
-    for i in df.index:
-        ax.scatter(x, df.loc[i])
-fig.tight_layout()
-fig.suptitle("Feature Importance of different models", size=20, y=1.05)
-plt.show()
+rf_50pc_modeled = pd.read_csv('../data/Models/Feature_Importance/RandomForestClassifier_modeled_upto_50.csv', index_col=0) 
+ab_50pc_modeled = pd.read_csv('../data/Models/Feature_Importance/AdaBoostClassifier_modeled_upto_50.csv', index_col=0)
+bg_50pc_modeled = pd.read_csv('../data/Models/Feature_Importance/BaggingClassifier_modeled_upto_50.csv', index_col=0)
+lr_50pc_modeled = pd.read_csv('../data/Models/Feature_Importance/LogisticRegression_modeled_upto_50.csv', index_col=0)
 
 ```
 
@@ -432,17 +492,405 @@ plt.show()
 
 
 ```python
-df = pd.read_csv('../data/Imputed/data_mean_upto_30pct_missing.csv')
-
-df_train, df_test = train_test_split(df, test_size=0.2, shuffle=True, random_state=rs)
-resp_vars = ['DXCOMB', 'DX_CHANGE', 'DX_FINAL', 'DX_BASE', 'DX_bl']
-
-y_train_multi = df_train['DX_FINAL']
-y_train_bin = df_train['DX_FINAL'].apply(lambda x: 1 if x == 3 else 0)
-X_train = df_train.drop(resp_vars, axis=1).select_dtypes(['number'])
-
-y_test_multi = df_test['DX_FINAL']
-y_test_bin = df_test['DX_FINAL'].apply(lambda x: 1 if x == 3 else 0)
-X_test = df_test.drop(resp_vars, axis=1).select_dtypes(['number'])
+#lets mean across the estimators for each model and put values in dataframe 
+rf = rf_50pc_modeled.mean()
+ab = ab_50pc_modeled.mean()
+lr = lr_50pc_modeled.mean()
+bg = bg_50pc_modeled.mean()
+features_50pc = pd.concat([rf.rename('RandomForest'), ab.rename('Adaboost'),  lr.rename('LogReg'), bg.rename('Bagging')], axis=1)
+features = features_50pc.index
+features_50pc.head()
 ```
+
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>RandomForest</th>
+      <th>Adaboost</th>
+      <th>LogReg</th>
+      <th>Bagging</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>AGE</th>
+      <td>0.005879</td>
+      <td>0.022760</td>
+      <td>-2.790952</td>
+      <td>0.002792</td>
+    </tr>
+    <tr>
+      <th>PTEDUCAT</th>
+      <td>0.003593</td>
+      <td>0.001057</td>
+      <td>0.145347</td>
+      <td>0.002356</td>
+    </tr>
+    <tr>
+      <th>FDG</th>
+      <td>0.022923</td>
+      <td>0.022680</td>
+      <td>-0.027745</td>
+      <td>0.029754</td>
+    </tr>
+    <tr>
+      <th>AV45</th>
+      <td>0.020883</td>
+      <td>0.014378</td>
+      <td>-0.347403</td>
+      <td>0.017745</td>
+    </tr>
+    <tr>
+      <th>ABETA</th>
+      <td>0.020470</td>
+      <td>0.054085</td>
+      <td>-0.514659</td>
+      <td>0.011245</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+
+
+```python
+x = features_50pc.values #returns a numpy array
+min_max_scaler = preprocessing.MinMaxScaler()
+features_50pc_scaled = min_max_scaler.fit_transform(x)
+features_50pc_scaled = pd.DataFrame(features_50pc_scaled)
+features_50pc_scaled.columns = ['RandomForest', 'Adaboost', 'Logistic Regression', 'Bagging']
+```
+
+
+
+
+```python
+features_50pc_scaled.describe()
+```
+
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>RandomForest</th>
+      <th>Adaboost</th>
+      <th>Logistic Regression</th>
+      <th>Bagging</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>count</th>
+      <td>176.000000</td>
+      <td>176.000000</td>
+      <td>176.000000</td>
+      <td>176.000000</td>
+    </tr>
+    <tr>
+      <th>mean</th>
+      <td>0.075221</td>
+      <td>0.076072</td>
+      <td>0.597343</td>
+      <td>0.014743</td>
+    </tr>
+    <tr>
+      <th>std</th>
+      <td>0.136933</td>
+      <td>0.163522</td>
+      <td>0.121599</td>
+      <td>0.082846</td>
+    </tr>
+    <tr>
+      <th>min</th>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+    </tr>
+    <tr>
+      <th>25%</th>
+      <td>0.006512</td>
+      <td>0.000006</td>
+      <td>0.579304</td>
+      <td>0.000294</td>
+    </tr>
+    <tr>
+      <th>50%</th>
+      <td>0.014270</td>
+      <td>0.003665</td>
+      <td>0.606138</td>
+      <td>0.001842</td>
+    </tr>
+    <tr>
+      <th>75%</th>
+      <td>0.082136</td>
+      <td>0.078188</td>
+      <td>0.630904</td>
+      <td>0.010384</td>
+    </tr>
+    <tr>
+      <th>max</th>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+
+
+```python
+features_50pc_scaled['feature'] = features_50pc.index
+```
+
+
+
+
+```python
+features_50pc_scaled.head()
+```
+
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>RandomForest</th>
+      <th>Adaboost</th>
+      <th>Logistic Regression</th>
+      <th>Bagging</th>
+      <th>feature</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0.077825</td>
+      <td>0.304721</td>
+      <td>0.291966</td>
+      <td>0.007244</td>
+      <td>AGE</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0.047569</td>
+      <td>0.014145</td>
+      <td>0.625673</td>
+      <td>0.006113</td>
+      <td>PTEDUCAT</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>0.303470</td>
+      <td>0.303656</td>
+      <td>0.606002</td>
+      <td>0.077202</td>
+      <td>FDG</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>0.276460</td>
+      <td>0.192507</td>
+      <td>0.569673</td>
+      <td>0.046042</td>
+      <td>AV45</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>0.271000</td>
+      <td>0.724132</td>
+      <td>0.550664</td>
+      <td>0.029178</td>
+      <td>ABETA</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+
+
+```python
+#lets order the features and select the top 100 features of each of the model. 
+
+features_50pc_ordered_rf= features_50pc_scaled.sort_values(by = 'RandomForest', axis=0, ascending=False)
+features_50pc_ordered_rf = features_50pc_ordered_rf.head(100)
+
+features_50pc_ordered_bg = features_50pc_scaled.sort_values(by = 'Bagging', axis=0, ascending=False)
+features_50pc_ordered_bg = features_50pc_ordered_bg.head(100)
+
+features_50pc_ordered_ab = features_50pc_scaled.sort_values(by = 'Adaboost', axis=0, ascending=False)
+features_50pc_ordered_ab = features_50pc_ordered_ab.head(100)
+
+features_50pc_ordered_lr = features_50pc_scaled.sort_values(by = 'Logistic Regression', axis=0, ascending=False)
+features_50pc_ordered_lr = features_50pc_ordered_lr.head(100)
+```
+
+
+We have ordered all the feature importances for each model from the most to least important. Next, we will look into what is the overlap between these top features by way of a Venn diagram. 
+
+
+
+```python
+setLabels2 = ['RandomForest','Logistic Regression', 'Adaboost']
+plt.figure()
+ax2 = plt.gca()
+v2 = venn3([set(features_50pc_ordered_rf.feature), set(features_50pc_ordered_lr.feature), 
+       set(features_50pc_ordered_ab.feature)], set_labels = setLabels2, ax = ax2)
+ax2.set_title('Overlap of the top 100 features of models: Random Forest, Logistic Regression and Adaboost')
+```
+
+
+
+
+
+    Text(0.5,1,'Overlap of the top 100 features of models: Random Forest, Logistic Regression and Adaboost')
+
+
+
+
+![png](model_comparison_files/model_comparison_38_1.png)
+
+
+
+
+```python
+sns.set()
+setLabels1 = ['RandomForest','Bagging', 'Adaboost']
+plt.figure(figsize=(5, 5))
+ax1 = plt.gca()
+v1 = venn3([set(features_50pc_ordered_rf.feature), set(features_50pc_ordered_bg.feature), 
+       set(features_50pc_ordered_ab.feature)], set_labels = setLabels1, ax = ax1)
+
+ax1.set_title('Overlap of the top 100 features of three models: Random Forest, Bagging and Adaboost')
+
+set1 = set(features_50pc_ordered_ab.feature)
+set2 = set(features_50pc_ordered_rf.feature)
+set3 = set(features_50pc_ordered_bg.feature)
+
+set4 = set1.intersection(set2)
+set5 = set4.intersection(set3)
+common = list(set5)
+
+```
+
+
+
+![png](model_comparison_files/model_comparison_39_0.png)
+
+
+Of the four models we are testing, we find a large degree of congruence between the top features identified by Random Forest, AdaBoost and Bagging. However, logistic regression shows the least overlap in what it calls the most important features in the dataset. This, together with the interpretability of the features led us to converge on the the three ensemble methods as the most reliable models.  
+
+
+
+```python
+selected_common_features = features_50pc_ordered_rf.loc[features_50pc_ordered_rf['feature'].isin(common)]
+```
+
+
+
+
+```python
+selected_common_features = selected_common_features.drop(['Logistic Regression'], axis =1)
+selected_common_features.head()
+selected_common_features.to_csv('Selected_common_features.csv')
+```
+
+
+
+
+```python
+features_50pc_ordered_rf_melt = pd.melt(features_50pc_ordered_rf, id_vars="feature", var_name="model", value_name="importance")
+features_50pc_ordered_lr_melt = pd.melt(features_50pc_ordered_lr, id_vars="feature", var_name="model", value_name="importance")
+features_50pc_ordered_ab_melt = pd.melt(features_50pc_ordered_ab, id_vars="feature", var_name="model", value_name="importance")
+features_50pc_ordered_bg_melt = pd.melt(features_50pc_ordered_bg, id_vars="feature", var_name="model", value_name="importance")
+```
+
+
+ Is the relative importance assigned by each model to the top features similar?
+ 
+Bagging and random forest assign similar relative importance to the features. Adaboost despite having an overlap in top features with the other models assigns a different relative importance to individual features. 
+
+
+
+```python
+sns.set()
+plt.figure(figsize=(11,8))
+ax = sns.scatterplot(x = 'feature', y = 'importance', hue = 'model', data = features_50pc_ordered_rf_melt)
+#sns.barplot(x = 'feature', y = 'ab', data = features_30pc_ordered_melt.head(40))
+ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+ax.set_title('Feature Importance 30pc ordered by the importance computed by Random Forest')
+```
+
+
+
+
+
+    Text(0.5,1,'Feature Importance 30pc ordered by the importance computed by Random Forest')
+
+
+
+
+![png](model_comparison_files/model_comparison_45_1.png)
 
