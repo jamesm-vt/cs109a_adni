@@ -29,8 +29,12 @@ More details about the deployment of each model can be found on the "Model Compa
 
 ## Selected Model:
 
-(show some plot based on the spreadsheet)
-
+<figure class="center_fig">
+    <img src="/cs109a_adni/docs/data_summary_files/FeatureImportance_top80Features.svg" class="image">
+    <figcaption class="center_cap" style="text-align: center">
+        Figure 2. Top Features arranged by Feature Importance as assigned by Random Forest.
+    </figcaption>
+</figure>
 
 ## Most important features identified by our model: 
 
