@@ -13,7 +13,7 @@ To summarize key predictors and findings of the project.
 
 <iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTiVdZaslqLlstuGXWtYX052rQRkclstZCyBB3tOKuiAb7CL3MY7KaeU8p9Hs3nxUFJ4mFzmJA0WA59/pubhtml?gid=1571893128&amp;single=true&amp;widget=true&amp;headers=false" style="width: 100%; height: 50%"></iframe>
 
-## Summary of Model Comparison: 
+## Summary of Model Comparison:
 
 In addition to the most used ensemble methods, we have decided also to test some traditional classification algorithms to check if the more complex ensemble methods actually improved accuracy. We have ran those methods in 5 datasets built with different imputation strategies. The accuracy of each model on the test sets of each dataset is summarized on the table below:
 
@@ -24,19 +24,21 @@ In addition to the most used ensemble methods, we have decided also to test some
     </figcaption>
 </figure>
 
+
+
 It is easy to check that "non-ensemble" methods did perform worse than the ensemble methods - as expected. Among the different ensemble methods, Bagging (using Decision Trees) showed stronger results than Boosting and Random Forests. It is also interesting to notice that the combination of Bagging and model-based imputation has proven to be the best combination to accurately predict Alzheimer's Disease on our patient base.
 More details about the deployment of each model can be found on the "Model Comparison" subsection.
 
 ## Selected Model:
 
 <figure class="center_fig">
-    <img src="/cs109a_adni/docs/data_summary_files/FeatureImportance_top80Features.svg" class="image">
+    <img src="/cs109a_adni/data_summary_files/FeatureImportance_top80Features.svg" class="image">
     <figcaption class="center_cap" style="text-align: center">
         Figure 2. Top Features arranged by Feature Importance as assigned by Random Forest.
     </figcaption>
 </figure>
 
-## Most important features identified by our model: 
+## Most important features identified by our model:
 
 The ensemble classification methods used by our group have identified features provided by ADNI that are capable of predicting AD. Among these are many cognitive tests and clinical test results that are well documented on the literature and support doctors diagnosing the disease. Many cognitive tests showed up as the most important predictors, a finding that is consistent to studies like (5).
 
@@ -54,7 +56,7 @@ The FAQ is an assessment tool in which the patient is evaluated across 10 dimens
 
 #### Montreal Cognitive Assessment (MoCA)
 
-When physicians diagnose cognitive impairments, one possible tool to do so is the MoCA, which consists of a series of tasks that the physician asks the patient to perform. The patient’s performance is graded from 0 to 30, this grade was stored in the variable MOCA, and used as a predictor in our model. (4) showed that not only MOCA results are significant to correctly classify patients between CN, MCI, and AD but also that the results deteriorate over time. 
+When physicians diagnose cognitive impairments, one possible tool to do so is the MoCA, which consists of a series of tasks that the physician asks the patient to perform. The patient’s performance is graded from 0 to 30, this grade was stored in the variable MOCA, and used as a predictor in our model. (4) showed that not only MOCA results are significant to correctly classify patients between CN, MCI, and AD but also that the results deteriorate over time.
 
 
 #### Everyday Cognition by Study Partner (ECogSP) and Everyday Cognition by Patient (ECogPt)
@@ -76,19 +78,19 @@ Many ADNI variables (e.g MidTemp, Ventricles, Fusiform) that store volumetric in
 
 ## Additional features identified by our model:
 
-In addition to the anatomical and cognitive tests outlined above which could be considered more direct phenotypic features of the disease, our modeling also highlights other indirect biological pathways that have been linked to Alzheimer’s disease. Among the top features uncovered by all three of our ensemble methods are physiological measurements that may be the biological underpinnings of the underlying pathophysiology of the AD. 
+In addition to the anatomical and cognitive tests outlined above which could be considered more direct phenotypic features of the disease, our modeling also highlights other indirect biological pathways that have been linked to Alzheimer’s disease. Among the top features uncovered by all three of our ensemble methods are physiological measurements that may be the biological underpinnings of the underlying pathophysiology of the AD.
 
 #### Inflammatory pathway
 
-Numerous biochemical and neuropathological studies have shown a clear evidence for activation of inflammatory pathways in Alzheimer’s disease (7,8). Furthermore, long term use of anti-inflammatory drugs is also linked to a reduction in risk to Alzheimer’s disease(9, 10). In concordance with these findings, we found that a significant number of the top features identified by all of the three ensembl methods (namely percentage of lymphocytes, basophils, monocytes and neutrophils) point towards the activation of the inflammatory pathway. 
+Numerous biochemical and neuropathological studies have shown a clear evidence for activation of inflammatory pathways in Alzheimer’s disease (7,8). Furthermore, long term use of anti-inflammatory drugs is also linked to a reduction in risk to Alzheimer’s disease(9, 10). In concordance with these findings, we found that a significant number of the top features identified by all of the three ensembl methods (namely percentage of lymphocytes, basophils, monocytes and neutrophils) point towards the activation of the inflammatory pathway.
 
 #### Vitamin B-12
 
-Also among our top 50 features found in all three models is the laboratory measurement of vitamin B12 levels in patients. A number of clinical studies have also investigated the correlation between the plasma vitamin B12 levels and cognitive impairment in AD (11, 12). These studies consistently conclude that vitamin B12 deficiency accelerates the progression of AD. 
+Also among our top 50 features found in all three models is the laboratory measurement of vitamin B12 levels in patients. A number of clinical studies have also investigated the correlation between the plasma vitamin B12 levels and cognitive impairment in AD (11, 12). These studies consistently conclude that vitamin B12 deficiency accelerates the progression of AD.
 
 
 
-## Effects of imputations on selected features: 
+## Effects of imputations on selected features:
 
 Our approach to imputation was to try both modeling and mean/mode based imputation. Our imputation strategy involved trying and tuning different types of models for both categorical and quantitative features. The other factor that we considered was the cut-off threshold for missing values (30%, 50%, 100%).
 
@@ -110,15 +112,22 @@ We found that neither imputation method or missingness threshold had a significa
 </figure>
 
 
+<figure class="center_fig">
+    <img src="/cs109a_adni/data_summary_files/missingness_Vs_Importance.svg" class="image">
+    <figcaption class="center_cap" style="text-align: center">
+        Figure 4. Percentage of data imputed among our top 80 common features across three ensemble models.
+    </figcaption>
+</figure>
+
 #### References: 
 
 1. Battista, P., Salvatore, C., & Castiglioni, I. (2017). Optimizing Neuropsychological Assessments for Cognitive, Behavioral, and Functional Impairment Classification: A Machine Learning Study. Behavioural neurology, 2017, 1850909.
 
-2. Landau, Susan & Harvey, Danielle & Madison, Cindee & A Koeppe, Robert & M Reiman, Eric & L Foster, Norman & Weiner, Michael & J Jagust, William. (2009). Associations between cognitive, functional, and FDG-PET measures of decline in AD and MCI. Neurobiology of aging. 32. 1207-18. 10.1016/j.neurobiolaging.2009.07.002. 
+2. Landau, Susan & Harvey, Danielle & Madison, Cindee & A Koeppe, Robert & M Reiman, Eric & L Foster, Norman & Weiner, Michael & J Jagust, William. (2009). Associations between cognitive, functional, and FDG-PET measures of decline in AD and MCI. Neurobiology of aging. 32. 1207-18. 10.1016/j.neurobiolaging.2009.07.002.
 
 3. Marshall, G. A., Zoller, A. S., Lorius, N., Amariglio, R. E., Locascio, J. J., Johnson, K. A., Sperling, R. A., … Rentz, D. M. (2015). Functional Activities Questionnaire Items that Best Discriminate and Predict Progression from Clinically Normal to Mild Cognitive Impairment. Current Alzheimer research, 12(5), 493-502.
 
-4. Chrem Méndez, Patricio & Calandri, Ismael & Nahas, Federico Exequiel & Russo, María & Demey, Ignacio & Eugenia Martín, María & Clarens, Florencia & Harris, Paula & Tapajoz, Fernanda & Campos, Jorge & I. Surace, Ezequiel & Martinetto, Horacio & Ventrice, Fernando & Cohen, Gabriela & Vazquez, Silvia & Romero, Carlos & Guinjoan, Salvador & Allegri, Ricardo & Sevlever, Gustavo. (2018). Argentina-Alzheimer’s disease neuroimaging initiative (Arg-ADNI): Neuropsychological evolution profile after one-year follow up. Arquivos de Neuro-Psiquiatria. 76. 231-240. 10.1590/0004-282x20180025. 
+4. Chrem Méndez, Patricio & Calandri, Ismael & Nahas, Federico Exequiel & Russo, María & Demey, Ignacio & Eugenia Martín, María & Clarens, Florencia & Harris, Paula & Tapajoz, Fernanda & Campos, Jorge & I. Surace, Ezequiel & Martinetto, Horacio & Ventrice, Fernando & Cohen, Gabriela & Vazquez, Silvia & Romero, Carlos & Guinjoan, Salvador & Allegri, Ricardo & Sevlever, Gustavo. (2018). Argentina-Alzheimer’s disease neuroimaging initiative (Arg-ADNI): Neuropsychological evolution profile after one-year follow up. Arquivos de Neuro-Psiquiatria. 76. 231-240. 10.1590/0004-282x20180025.
 
 5. Li, K., Chan, W., Doody, R. S., Quinn, J., Luo, S., Alzheimer’s Disease Neuroimaging Initiative (2017). Prediction of Conversion to Alzheimer's Disease with Longitudinal Measures and Time-To-Event Data. Journal of Alzheimer's disease : JAD, 58(2), 361-371.
 
