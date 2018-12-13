@@ -98,7 +98,7 @@ We found the level of missingness that we accepted did have a slight impact on m
 We found that neither imputation method or missingness threshold had a significant impact on feature importance. The most significant factor influencing feature selection was the choice of model.
 
 <figure class="center_fig">
-    <img src="/cs109a_adni/figures/feat_import_model.png" class="image" style="width: 100%">
+    <img src="/cs109a_adni/data_summary_files/feat_import_model.png" class="image" style="width: 100%">
     <figcaption class="center_cap" style="text-align: center">
         Figure 3. Impact of model choice on feature importance.
     </figcaption>
