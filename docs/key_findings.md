@@ -18,7 +18,7 @@ To summarize key predictors and findings of the project.
 In addition to the most used ensemble methods, we have decided also to test some traditional classification algorithms to check if the more complex ensemble methods actually improved accuracy. We have ran those methods in 5 datasets built with different imputation strategies. The accuracy of each model on the test sets of each dataset is summarized on the table below:
 
 <figure class="center_fig">
-    <img src="/cs109a_adni/figures/modelheatmap.png" class="image">
+    <img src="/cs109a_adni/index_files/modelheatmap.png" class="image">
     <figcaption class="center_cap" style="text-align: center">
         Figure 1. Model comparison summary.
     </figcaption>
@@ -99,7 +99,7 @@ We found the level of missingness that we accepted did have a slight impact on m
 We found that neither imputation method or missingness threshold had a significant impact on feature importance. The most significant factor influencing feature selection was the choice of model.
 
 <figure class="center_fig">
-    <img src="/cs109a_adni/figures/feat_import_model.png" class="image" style="width: 100%">
+    <img src="/cs109a_adni/data_summary_files/feat_import_model.png" class="image" style="width: 100%">
     <figcaption class="center_cap" style="text-align: center">
         Figure 3. Impact of model choice on feature importance.
     </figcaption>
