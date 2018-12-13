@@ -11,13 +11,17 @@ import numpy as np
 import pandas as pd
 import os
 
-import glob
+from glob import glob
 from joblib import dump, load
 from sklearn.model_selection import KFold
 from sklearn.model_selection import StratifiedKFold
 from sklearn.linear_model import LinearRegression
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.model_selection import GridSearchCV
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import BaggingClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 
@@ -551,10 +555,18 @@ def calculate_missing_data(data):
 def get_feature_names(data_path, design_mat, resp_vars):
     file_w_path = data_path + design_mat
     df = pd.read_csv(file_w_path, index_col='RID')
+    
+    if 'baseline' in design_mat:
+        dummies = ['PTETHCAT', 'PTGENDER', 'PTRACCAT', 'PTMARRY', 'FSVERSION', 'APOE4']
+        df = df.drop(columns=['DX_bl'], axis=1)
+        df = pd.get_dummies(df, columns=dummies)
+        return list(df.columns)
+
     if 'modeled' in design_mat:
         df = reverse_one_hot(resp_vars, df)
-
+        
     df = df.drop(resp_vars, axis=1).select_dtypes(['number'])
+    df = df.drop(columns=['CDRSB','mPACCtrailsB', 'mPACCdigit'])
     return list(df.columns)
 
 
@@ -592,7 +604,7 @@ def reverse_one_hot(resp_set, imp_df):
 
 # Load and return models from disk based on glob pattern
 def load_models(glob_ptrn):
-    model_list = glob.glob(glob_ptrn)
+    model_list = glob(glob_ptrn)
     return [load(model) for model in model_list]
 
 
@@ -609,3 +621,46 @@ def get_train_test(filename, rm_vars, resp_variable):
     X_test = df_test.drop(rm_vars, axis=1).select_dtypes(['number'])
     
     return X_train, y_train, X_test, y_test
+
+def get_ADNI_baseline_data(bl_file_path):
+    df = pd.read_csv(bl_file_path, index_col='RID')
+    dummies = ['PTETHCAT', 'PTGENDER', 'PTRACCAT', 'PTMARRY', 'FSVERSION', 'APOE4']
+    df = pd.get_dummies(df, columns=dummies)
+    X = df.drop(['DX_bl'], axis=1)
+    y = df['DX_bl']
+    return X, y
+
+def get_ADNI_baseline(estimators):
+    bl_files = glob('../data/Imputed/baseline*.csv')
+    for bl_file_path in bl_files:
+        # Read in the file
+        bl_file = bl_file_path.split('/')[-1]
+        estimators[bl_file] = []
+        df = pd.read_csv(bl_file_path, index_col='RID')
+        
+        dummies = ['PTETHCAT', 'PTGENDER', 'PTRACCAT', 'PTMARRY', 'FSVERSION', 'APOE4']
+        df = pd.get_dummies(df, columns=dummies)
+        X = df.drop(['DX_bl'], axis=1)
+        y = df['DX_bl']
+
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, shuffle=True, random_state=42)
+
+        # Bagging
+        dt_clf = DecisionTreeClassifier()
+        bag_clf = BaggingClassifier(dt_clf, n_jobs=-1, n_estimators=100)
+        bag_clf_params = {'base_estimator__max_depth':[2, 3, 5, 10, 20],
+                  'base_estimator__min_samples_leaf': [1, 2, 4, 6, 20]}
+
+        bag_gs = GridSearchCV(bag_clf, bag_clf_params, iid=False, return_train_score=False, n_jobs=-1, cv=5)
+        bag_gs.fit(X_train, y_train)
+        estimators[bl_file].append((bag_gs.best_score_, bag_gs.best_estimator_))
+
+        # Random Forest
+        rf_clf = RandomForestClassifier(n_estimators=100, n_jobs=-1)
+        rf_clf_params = {'max_depth':[2, 3, 5, 10, 20],
+              'min_samples_leaf': [1, 2, 4, 6, 20]}  
+
+        rf_gs = GridSearchCV(rf_clf, rf_clf_params, iid=False, return_train_score=False, n_jobs=-1, cv=5)
+        rf_gs.fit(X_train, y_train)
+        estimators[bl_file].append((rf_gs.best_score_, rf_gs.best_estimator_))
+    return estimators
