@@ -16,7 +16,12 @@ To summarize key predictors and findings of the project
 
 In addition to the most used ensemble methods, we have decided also to test some traditional classification algorithms to check if the more complex ensemble methods actually improved accuracy. We have ran those methods in 5 datasets built with different imputation strategies. The accuracy of each model on the test sets of each dataset is summarized on the table below:
 
-(HEATMAP IMAGE)
+<figure class="center_fig">
+    <img src="/cs109a_adni/figures/modelheatmap.png" class="image">
+    <figcaption class="center_cap" style="text-align: center">
+        Figure 1. Alzheimer's Disease is a leading cause of death in the world.
+    </figcaption>
+</figure>
 
 It is easy to check that "non-ensemble" methods did perform worse than the ensemble methods - as expected. Among the different ensemble methods, Bagging (using Decision Trees) showed stronger results than Boosting and Random Forests. It is also interesting to notice that the combination of Bagging and model-based imputation has proven to be the best combination to accurately predict Alzheimer's Disease on our patient base.
 More details about the deployment of each model can be found on the "Model Comparison" subsection.
