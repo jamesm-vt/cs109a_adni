@@ -558,6 +558,7 @@ def get_feature_names(data_path, design_mat, resp_vars):
     
     if 'baseline' in design_mat:
         dummies = ['PTETHCAT', 'PTGENDER', 'PTRACCAT', 'PTMARRY', 'FSVERSION', 'APOE4']
+        df = df.drop(columns=['CDRSB','mPACCtrailsB', 'mPACCdigit'])
         df = df.drop(columns=['DX_bl'], axis=1)
         df = pd.get_dummies(df, columns=dummies)
         return list(df.columns)
@@ -627,6 +628,7 @@ def get_ADNI_baseline_data(bl_file_path):
     dummies = ['PTETHCAT', 'PTGENDER', 'PTRACCAT', 'PTMARRY', 'FSVERSION', 'APOE4']
     df = pd.get_dummies(df, columns=dummies)
     X = df.drop(['DX_bl'], axis=1)
+    X = X.drop(columns=['CDRSB','mPACCtrailsB', 'mPACCdigit'])
     y = df['DX_bl']
     return X, y
 
@@ -641,6 +643,7 @@ def get_ADNI_baseline(estimators):
         dummies = ['PTETHCAT', 'PTGENDER', 'PTRACCAT', 'PTMARRY', 'FSVERSION', 'APOE4']
         df = pd.get_dummies(df, columns=dummies)
         X = df.drop(['DX_bl'], axis=1)
+        X = X.drop(columns=['CDRSB','mPACCtrailsB', 'mPACCdigit'])
         y = df['DX_bl']
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, shuffle=True, random_state=42)
