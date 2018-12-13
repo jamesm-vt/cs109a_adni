@@ -9,7 +9,6 @@ subsection: 1
 
 To summarize key predictors and findings of the project.
 
-
 ## Summary of Model Comparison:
 
 In addition to the most used ensemble methods, we have decided also to test some traditional classification algorithms to check if the more complex ensemble methods actually improved accuracy. We have ran those methods in 5 datasets built with different imputation strategies. The accuracy of each model on the test sets of each dataset is summarized on the table below:

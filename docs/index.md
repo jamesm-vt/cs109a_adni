@@ -55,4 +55,14 @@ The scope of the ADNI study spans 14 years, 63 clincal sites and a diversity of 
 
 - **Modeling** - With the data cleaned, aggregated by patient, and imputed to replace missing values, we train and compare the performance of Random Forest and ADA Boost models in predicting Alzheimer's Disease diagnoses.
 
+
+### References
+
+1. “Dementia.” World Health Organization, World Health Organization, 12 Dec. 2017, www.who.int/en/news-room/fact-sheets/detail/dementia
+
+2. “The Top 10 Causes of Death.” World Health Organization, World Health Organization, 24 May 2018, 
+www.who.int/news-room/fact-sheets/detail/the-top-10-causes-of-death.
+
+3. Perl, Daniel P. “Neuropathology of Alzheimer's disease” Mount Sinai journal of medicine, New York vol. 77,1 (2010): 32-42.
+
 <div style="margin-top: 100px"></div>
