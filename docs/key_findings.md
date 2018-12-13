@@ -17,7 +17,7 @@ To summarize key predictors and findings of the project
 In addition to the most used ensemble methods, we have decided also to test some traditional classification algorithms to check if the more complex ensemble methods actually improved accuracy. We have ran those methods in 5 datasets built with different imputation strategies. The accuracy of each model on the test sets of each dataset is summarized on the table below:
 
 <figure class="center_fig">
-    <img src="/cs109a_adni/figures/modelheatmap.png" class="image">
+    <img src="/cs109a_adni/index_files/modelheatmap.png" class="image">
     <figcaption class="center_cap" style="text-align: center">
         Figure 1. Model comparison summary.
     </figcaption>
