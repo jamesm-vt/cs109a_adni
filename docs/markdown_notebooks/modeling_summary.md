@@ -46,7 +46,7 @@ More details about the deployment of each model can be found on the "Model Compa
 
 We have performed Principal Component Analysis (PCA) to check if we could further improve our results. However, as shown on the "Imputation" section of this report, the correlation between features is not relevant. Therefore, PCA does not concentrate explanatory power on a few components. This finding is corroborated by the following plot:
 
-![png](../figures/pca.png)
+![](../figures/pca.png)
 
 ## Impact of Data Aggregation
 

@@ -7,6 +7,15 @@ subsection:
 {:.no_toc}
 *  
 {: toc}
+title: 
+notebook: 
+section: 
+subsection: 
+
+## Contents
+{:.no_toc}
+*  
+{: toc}
 
 ## Modeling with Random Forest
 (Shristi Pandey)
@@ -1097,7 +1106,6 @@ Next we will use cross validation to choose the appropriate hyperparameters for 
 
 
 ```python
-# alternatively this can be done with grid searchcv. 
 
 def choose_hyper_parameters(X_train, y_train):
     best_score = 0
