@@ -54,10 +54,11 @@ In this section, we will present the key features that were selected by our mode
 <div style="margin-top: 30px"></div>
 
 <iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTiVdZaslqLlstuGXWtYX052rQRkclstZCyBB3tOKuiAb7CL3MY7KaeU8p9Hs3nxUFJ4mFzmJA0WA59/pubhtml?gid=1571893128&amp;single=true&amp;widget=true&amp;headers=false" style="width: 100%; height: 600px"></iframe>
-    <figcaption class="center_cap" style="text-align: center">
-        Table 1. Top 80 features identified by all ensemble methods, ordered by Random Forest feature importance.
-    </figcaption>
 <div style="margin-top: 30px"></div>
+<figcaption class="center_cap" style="text-align: center">
+    Table 1. Top 80 features identified by all ensemble methods, ordered by Random Forest feature importance.
+</figcaption>
+
 
 #### Logical Memory Delayed Recall (LDELTOTAL)
 
