@@ -36,12 +36,7 @@ We have run those classifiers in 5 different datasets:
 
 The accuracy of each model on the test sets of each dataset is summarized on the table below:
 
-<figure class="center_fig">
-    <img src="/cs109a_adni/figures/modelheatmap.png" class="image" style="width: 100%">
-    <figcaption class="center_cap" style="text-align: center">
-        Figure 1. Heatmap of model performance for all combinations of model type and data set.
-    </figcaption>
-</figure>
+![test](../figures/modelheatmap.png)
 
 It is easy to check that "non-ensemble" methods did perform worse than the ensemble methods - as expected. Among the different ensemble methods, Bagging (using Decision Trees) showed stronger results than Boosting and Random Forests. It is also interesting to notice that the combination of Bagging and model-based imputation has proven to be the best combination to accurately predict Alzheimer's Disease on our patient base.
 
@@ -49,14 +44,9 @@ More details about the deployment of each model can be found on the "Model Compa
 
 ## Dimensionality reduction
 
-We have performed Principal Component Analysis (PCA) to check if we could further improve our results. However, as shown on the "Imputation" section of this report,the correlation between features is not relevant. Therefore, PCA does not concentrate explanatory power on a few components. This finding is corroborated by the following plot:
+We have performed Principal Component Analysis (PCA) to check if we could further improve our results. However, as shown on the "Imputation" section of this report, the correlation between features is not relevant. Therefore, PCA does not concentrate explanatory power on a few components. This finding is corroborated by the following plot:
 
-<figure class="center_fig">
-    <img src="/cs109a_adni/figures/pca.png" class="image" style="width: 100%">
-    <figcaption class="center_cap" style="text-align: center">
-        Figure 2. Variance explained by principal components.
-    </figcaption>
-</figure>
+![](../figures/pca.png)
 
 ## Impact of Data Aggregation
 
