@@ -7,10 +7,11 @@ subsection: 1
 
 ## Goal
 
-To summarize key predictors and findings of the project
+To summarize key predictors and findings of the project.
 
 ## Summary of Results
 
+<iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTiVdZaslqLlstuGXWtYX052rQRkclstZCyBB3tOKuiAb7CL3MY7KaeU8p9Hs3nxUFJ4mFzmJA0WA59/pubhtml?gid=1571893128&amp;single=true&amp;widget=true&amp;headers=false" style="width: 100%"></iframe>
 
 ## Summary of Model Comparison: 
 
@@ -19,7 +20,7 @@ In addition to the most used ensemble methods, we have decided also to test some
 <figure class="center_fig">
     <img src="/cs109a_adni/figures/modelheatmap.png" class="image">
     <figcaption class="center_cap" style="text-align: center">
-        Figure 1. Alzheimer's Disease is a leading cause of death in the world.
+        Figure 1. Model comparison summary.
     </figcaption>
 </figure>
 

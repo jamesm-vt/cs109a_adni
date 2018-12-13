@@ -36,7 +36,12 @@ We have run those classifiers in 5 different datasets:
 
 The accuracy of each model on the test sets of each dataset is summarized on the table below:
 
-![test](../figures/modelheatmap.png)
+<figure class="center_fig">
+    <img src="/cs109a_adni/figures/modelheatmap.png" class="image">
+    <figcaption class="center_cap" style="text-align: center">
+        Figure 1. Model comparison summary.
+    </figcaption>
+</figure>
 
 It is easy to check that "non-ensemble" methods did perform worse than the ensemble methods - as expected. Among the different ensemble methods, Bagging (using Decision Trees) showed stronger results than Boosting and Random Forests. It is also interesting to notice that the combination of Bagging and model-based imputation has proven to be the best combination to accurately predict Alzheimer's Disease on our patient base.
 
@@ -46,14 +51,10 @@ More details about the deployment of each model can be found on the "Model Compa
 
 We have performed Principal Component Analysis (PCA) to check if we could further improve our results. However, as shown on the "Imputation" section of this report, the correlation between features is not relevant. Therefore, PCA does not concentrate explanatory power on a few components. This finding is corroborated by the following plot:
 
-![](../figures/pca.png)
+<figure class="center_fig">
+    <img src="/cs109a_adni/figures/pca.png" class="image">
+    <figcaption class="center_cap" style="text-align: center">
+        Figure 2. Principal components ordered by variance explained.
+    </figcaption>
+</figure>
 
-## Impact of Data Aggregation
-
-A relevant part of this work was to browse through hundreds of datasources provided by ADNI searching for additional features that could be embedded to the orignial ADNI Merge dataset. This effort has yielded significant results. As the plot below shows, running a similar Bagging model on the raw ADNI Merge dataset we have obtained a score XX p.p. lower than the one reported above.
-
-
-IMAGE PROVING THE POINT ABOVE
-
-
-We haven't scanned the whole ADNI repository - for example, we left images out of the scope of this project. Therefore, we believe that an important avenue for further improvement can be the addition of other features - like the results of image exams.
